@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -89,24 +87,11 @@
             </div>
 
             <div class="col d-flex flex-column h-sm-100">
-
-                <!-- Aqui começa o conteudo da pagina -->
-
                 <main class="row overflow-auto">
 
-                    <div class="col pt-4">
-                        <h1>Dashboard</h1>
-                        <p>Bem vindo a sua dashboard! aqui voce pode gerenciar eventos, editar seu perfil e gerar relatórios!</p>
-                    </div>
-
-
-                    <!-- Graficos, o codigo de verdade está em js/app.js-->
-                    <div class="card p-4 ">
-                        <canvas id="eventosChart"></canvas>
-                    </div>
+                @yield('content')
 
                 </main>
-
                 <footer class="row bg-light py-4 mt-auto">
                     <div class="col"> Footer content here... </div>
                 </footer>
