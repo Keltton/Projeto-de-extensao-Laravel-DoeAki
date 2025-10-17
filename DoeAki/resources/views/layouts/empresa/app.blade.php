@@ -4,12 +4,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard</title>
+    <title>@yield('title')</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 
-    <link rel="stylesheet" href=".\.\css\dashboard.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c&display=swap');
+    </style>
+
+    <link rel="stylesheet" href="./css/empresa/style.css">
+    @vite([ 'resources/css/empresa/style.css'])
     @vite([ 'resources/js/app.js'])
 </head>
 
@@ -18,7 +23,7 @@
     <!-- Eu sou horrivel com FrontEnd, então eu estou utilizando um exemplo para usar de base, o site que eu utilizei é o Codeply, oq não tem problema, melhor que GPT -->
     <!-- importante é entender (menos esses 50 css em cada div)-->
 
-    <div class="container-fluid overflow-hidden">
+    <div class="container-fluid overflow-hidden ">
         <div class="row vh-100 overflow-auto">
             <div class="col-12 col-sm-3 col-xl-2 px-sm-2 px-0 bg-dark d-flex sticky-top">
                 <div class="d-flex flex-sm-column flex-row flex-grow-1 align-items-center align-items-sm-start px-3 pt-2 text-white">
@@ -33,7 +38,7 @@
                         <!-- Cada Li é um item na sidebar -->
 
                         <li class="nav-item">
-                            <a href="#" class="nav-link px-sm-0 px-2">
+                            <a href="/dashboard" class="nav-link px-sm-0 px-2">
                                 <i class="fs-5 bi-house"></i><span class="ms-1 d-none d-sm-inline">Tela inicial</span>
                             </a>
                         </li>
@@ -46,9 +51,9 @@
                                 <span class="ms-1 d-none d-sm-inline">Eventos</span>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-dark text-small shadow" aria-labelledby="dropdown">
-                                <li><a class="dropdown-item" href="#">Ver eventos</a></li>
-                                <li><a class="dropdown-item" href="#">Novo evento</a></li>
-                                <li><a class="dropdown-item" href="#">Gerenciar eventos</a></li>
+                                <li><a class="dropdown-item" href="/eventos">Ver eventos</a></li>
+                                <li><a class="dropdown-item" href="/gerenciar">Novo evento</a></li>
+                                <li><a class="dropdown-item" href="/gerenciar">Gerenciar eventos</a></li>
                             </ul>
                         </li>
 
@@ -59,10 +64,10 @@
                                 <i class="bi bi-card-text"></i><span class="ms-1 d-none d-sm-inline">Relatórios</span>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-dark text-small shadow" aria-labelledby="dropdown">
-                                <li><a class="dropdown-item" href="#">Estoque</a></li>
-                                <li><a class="dropdown-item" href="#">Doações</a></li>
-                                <li><a class="dropdown-item" href="#">Recebidos</a></li>
-                                <li><a class="dropdown-item" href="#">Geral</a></li>
+                                <li><a class="dropdown-item" href="/estoque">Estoque</a></li>
+                                <li><a class="dropdown-item" href="/doacoes">Doações</a></li>
+                                <li><a class="dropdown-item" href="/recebido">Recebidos</a></li>
+                                <li><a class="dropdown-item" href="/geral">Geral</a></li>
                             </ul>
                         </li>
                     </ul>
@@ -92,9 +97,7 @@
                 @yield('content')
 
                 </main>
-                <footer class="row bg-light py-4 mt-auto">
-                    <div class="col"> Footer content here... </div>
-                </footer>
+                
             </div>
 
         </div>

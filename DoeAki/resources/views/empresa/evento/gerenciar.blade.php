@@ -1,45 +1,54 @@
 @extends ('layouts.empresa.app')
 
-@content
+@section('title', 'Gerenciar Eventos')
 
-<div class="card card-outline-secondary">
+@section('content')
 
-    <div class="card-header">
-        <h3 class="mb-0">Cadastre seu evento</h3>
-    </div>
-    <div class="card-body">
+<div class="container py-5 main-gerenciar ">
+
+    <div class="col-md-10 offset-md-1">
+
+
+        <h2 class="mb-4">Cadastre seu evento</h2>
+
+
         <form class="form" action="">
 
-            <div class="form-group row">
-                <label class="col-lg-3 col-form-label form-control-label" for="nomeEvento">Nome do evento</label>
+            <div class="form-group row ">
+                <label class="col-lg-3 col-form-label form-control-label" for="nomeEvento"> <strong>Nome do evento: </strong></label>
                 <div class="col-lg-9">
                     <input class="form-control" type="text" name="nomeEvento" id="nomeEvento" required>
                 </div>
             </div>
 
-            <div class="form-group row">
-                <label class="col-lg-3 col-form-label form-control-label" for="dataEvento">Data do evento</label>
+            <div class="form-group row mt-5">
+                <label class="col-lg-3 col-form-label form-control-label" for="dataEvento"><strong>Data do evento:</strong></label>
                 <div class="col-lg-9">
                     <input class="form-control" type="date" name="dataEvento" id="dataEvento" required>
                 </div>
             </div>
 
-            <label for="nomeEvento"></label>
-            <input type="text" name="nomeEvento" id="nomeEvento" required>
+            <div class="form-group row mt-5">
+                <label class="col-lg-3 col-form-label form-control-label"><strong>Item para ser doado:</strong></label>
+                <div class="col-lg-9">
+                    <select id="itemEvento" class="form-control" size="0">
+                        <option value="brinquedo">Brinquedos</option>
+                        <option value="roupa">Roupas</option>
+                        <option value="alimento">Alimento</option>
+                        <option value="higiene">Produtos de higiene</option>
+                    </select>
+                </div>
+            </div>
 
-            <label for="dataEvento"></label>
-            <input type="date" name="dataEvento" id="dataEvento" required>
+            <label for="descricaoEvento" class=" mt-5"><strong>Descrição do Evento</strong></label>
+            <div class="row mb-1">
+                <div class="col-lg-12">
+                    <textarea rows="6" name="descricaoEvento" id="descricaoEvento" class="form-control" required></textarea>
+                </div>
+            </div>
 
-            <label for="descricaoEvento"></label>
-            <input type="textbox" name="descricaoEvento" id="descricaoEvento" required>
-
-            <label for="itemEvento"></label>
-            <select name="itemEvento" id="itemEvento">
-                <option value="brinquedo">Brinquedos</option>
-                <option value="roupa">Roupas</option>
-                <option value="alimento">Alimento</option>
-                <option value="higiene">Produtos de higiene</option>
-            </select>
         </form>
     </div>
 </div>
+
+@endsection
