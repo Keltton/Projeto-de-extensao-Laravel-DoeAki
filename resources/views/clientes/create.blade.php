@@ -1,41 +1,60 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <title>Cadastro de Cliente</title>
-</head>
-<body>
-    <h1>Cadastro de Cliente</h1>
+@extends('layouts.app')
 
-    <form action="#" method="POST">
-        <label>Nome:</label>
-        <input type="text" name="nome"><br><br>
+@section('title', 'Cadastro de Doador')
 
-        <label>Endereço:</label>
-        <input type="text" name="endereco"><br><br>
+@section('content')
+<div class="container py-4">
+    <h1>Cadastro de Doador</h1>
 
-        <label>Complemento:</label>
-        <input type="text" name="complemento"><br><br>
+    <form action="{{ route('clientes.store') }}" method="POST" class="mt-4">
+        @csrf <!-- importante para formulários no Laravel -->
 
-        <label>Número:</label>
-        <input type="text" name="numero"><br><br>
+        <div class="mb-3">
+            <label class="form-label">Nome:</label>
+            <input type="text" name="nome" class="form-control">
+        </div>
 
-        <label>CEP:</label>
-        <input type="text" name="cep"><br><br>
+        <div class="mb-3">
+            <label class="form-label">Endereço:</label>
+            <input type="text" name="endereco" class="form-control">
+        </div>
 
-        <label>Cidade:</label>
-        <input type="text" name="cidade"><br><br>
+        <div class="mb-3">
+            <label class="form-label">Complemento:</label>
+            <input type="text" name="complemento" class="form-control">
+        </div>
 
-        <label>Estado:</label>
-        <input type="text" name="estado"><br><br>
+        <div class="mb-3">
+            <label class="form-label">Número:</label>
+            <input type="text" name="numero" class="form-control">
+        </div>
 
-        <label>País:</label>
-        <input type="text" name="pais"><br><br>
+        <div class="mb-3">
+            <label class="form-label">CEP:</label>
+            <input type="text" name="cep" class="form-control">
+        </div>
 
-        <label>Telefone:</label>
-        <input type="text" name="telefone"><br><br>
+        <div class="mb-3">
+            <label class="form-label">Cidade:</label>
+            <input type="text" name="cidade" class="form-control">
+        </div>
 
-        <button type="submit">Cadastrar</button>
+        <div class="mb-3">
+            <label class="form-label">Estado:</label>
+            <input type="text" name="estado" class="form-control">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">País:</label>
+            <input type="text" name="pais" class="form-control">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Telefone:</label>
+            <input type="text" name="telefone" class="form-control">
+        </div>
+
+        <button type="submit" class="btn btn-primary">Cadastrar</button>
     </form>
-</body>
-</html>
+</div>
+@endsection

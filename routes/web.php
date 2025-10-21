@@ -17,6 +17,8 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/clientes/criar', function () {
-    return view('clientes.create');
-});
+use App\Http\Controllers\ClienteController;
+
+Route::get('/clientes/criar', [ClienteController::class, 'create'])->name('clientes.create');
+Route::post('/clientes', [ClienteController::class, 'store'])->name('clientes.store');
+
