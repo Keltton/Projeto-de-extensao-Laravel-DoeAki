@@ -11,8 +11,26 @@
         <label>Nome:</label>
         <input type="text" name="nome"><br><br>
 
-        <label>Email:</label>
-        <input type="email" name="email"><br><br>
+        <label>Endereço:</label>
+        <input type="text" name="endereco"><br><br>
+
+        <label>Complemento:</label>
+        <input type="text" name="complemento"><br><br>
+
+        <label>Número:</label>
+        <input type="text" name="numero"><br><br>
+
+        <label>CEP:</label>
+        <input type="text" name="cep"><br><br>
+
+        <label>Cidade:</label>
+        <input type="text" name="cidade"><br><br>
+
+        <label>Estado:</label>
+        <input type="text" name="estado"><br><br>
+
+        <label>País:</label>
+        <input type="text" name="pais"><br><br>
 
         <label>Telefone:</label>
         <input type="text" name="telefone"><br><br>
