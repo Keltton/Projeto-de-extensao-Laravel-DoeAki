@@ -6,7 +6,7 @@
 <div class="container py-4">
     <h1>Cadastro de Doador</h1>
 
-    <form action="{{ route('clientes.store') }}" method="POST" class="mt-4">
+    <form action="{{ route('doador.store') }}" method="POST" class="mt-4">
         @csrf <!-- importante para formulários no Laravel -->
 
         <div class="mb-3">

@@ -9,7 +9,7 @@ class ClienteController extends Controller
     // Mostra o formulário
     public function create()
     {
-        return view('clientes.create');
+        return view('doador.create');
     }
 
     // Recebe os dados do formulário
@@ -18,6 +18,6 @@ class ClienteController extends Controller
         // Salvar no banco, por exemplo:
         // Cliente::create($request->all());
 
-        return redirect()->route('clientes.create')->with('success', 'Doador cadastrado com sucesso!');
+        return redirect()->route('doador.create')->with('sucesso', 'Doador cadastrado com sucesso!');
     }
 }
