@@ -29,6 +29,13 @@
             </div>
 
             <div class="form-group row mt-5">
+                <label class="col-lg-3 col-form-label form-control-label" for="nomeEvento"> <strong>Imagen do evento: </strong></label>
+                <div class="col-lg-9">
+                    <input class="form-control" type="file" id="nomeEvento" name="nomeEvento">
+                </div>
+            </div>
+
+            <div class="form-group row mt-5">
                 <label class="col-lg-3 col-form-label form-control-label"><strong>Item para ser doado:</strong></label>
                 <div class="col-lg-9">
                     <select id="itemEvento" class="form-control" size="0">
@@ -45,6 +52,11 @@
                 <div class="col-lg-12">
                     <textarea rows="6" name="descricaoEvento" id="descricaoEvento" class="form-control" required></textarea>
                 </div>
+            </div>
+
+            <div class="d-grid gap-4 d-md-flex justify-content-md-end mt-5">
+                <button class="btn btn-success me-md-2" type="button">Salvar</button>
+                <button class="btn btn-danger" type="button">Voltar</button>
             </div>
 
         </form>

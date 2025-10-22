@@ -1,33 +1,18 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\EmpresaController;
+use App\Http\Controllers\EventoController;
 
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| contains the "web" middleware group. Now create something great!
-|
-*/
+//Route::get('/clients', [ClientController::class, 'index'])->name('clients.index');
 
-Route::get('/', function () {
-    return view('welcome');
-});
 
-Route::get('/dashboard', function(){
-    return view('empresa.dashboard');
-});
 
-Route::get('/eventos', function () {
-    return view('empresa.evento.lista');
-})->name('empresa.evento.lista');
+Route::get('/dashboard', [EmpresaController::class, 'index']) -> name('empresa.dashboard');
 
-Route::get('/gerenciar', function () {
-    return view('empresa.evento.gerenciar');
-})->name('empresa.evento.gerenciar');
+Route::get('/eventos', [EventoController::class, 'lista']) -> name('empresa.evento.lista');
+
+Route::get('/gerenciar', [EventoController::class, 'gerenciar']) -> name('empresa.evento.gerenciar');
 
 Route::get('/estoque', function () {
     return view('empresa.relatorios.estoque');

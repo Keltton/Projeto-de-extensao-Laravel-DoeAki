@@ -43,6 +43,8 @@
                             </a>
                         </li>
 
+                        
+
                         <!-- menu com dropdown de eventos na sidebar-->
 
                         <li class="dropdown">
@@ -70,11 +72,18 @@
                                 <li><a class="dropdown-item" href="/geral">Geral</a></li>
                             </ul>
                         </li>
+
+                         <li class="nav-item">
+                            <a href="/dashboard" class="nav-link px-sm-0 px-1">
+                                <i class="bi bi-plus-square"></i><span class="ms-1 d-none d-sm-inline">Cadastro de itens</span>
+                            </a>
+                        </li>
+                       
                     </ul>
 
 
                     <!--area do perfil na sidebar-->
-                    <div class="dropdown py-sm-4 mt-sm-auto ms-auto ms-sm-0 flex-shrink-1">
+                    <div class="dropdown py-sm-4     mt-sm-auto ms-auto ms-sm-0 flex-shrink-1">
                         <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
                             <img src="https://blog.agmar.com.br/wp-content/uploads/2018/07/Edif%C3%ADcio-Cristiane-Massud-Agmar.jpg" alt="hugenerd" width="28" height="28" class="rounded-circle">
                             <span class="d-none d-sm-inline mx-1">($NomeDaEmpresa)</span>
