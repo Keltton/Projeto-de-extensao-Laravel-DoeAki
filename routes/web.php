@@ -23,9 +23,10 @@ Route::get('/doador/criar', [ClienteController::class, 'create'])->name('doador.
 Route::post('/doador', [ClienteController::class, 'store'])->name('doador.store');
 
 
-use App\Services\ViaCepService;
+use App\Http\Controllers\DoadorController;
 
-Route::get('/buscar-endereco/{cep}', function ($cep, ViaCepService $viaCepService) {
-    return response()->json($viaCepService->getEndereco($cep));
-});
+Route::get('/buscar-endereco/{cep}', [DoadorController::class, 'buscarEndereco']);
+Route::resource('doador', DoadorController::class);
+
+
 
