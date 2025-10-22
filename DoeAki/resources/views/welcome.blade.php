@@ -5,7 +5,6 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>DoeAki — Home</title>
-    {{-- Bootstrap 5 via CDN --}}
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 
@@ -16,13 +15,11 @@
             <a class="navbar-brand fw-bold" href="{{ route('home') }}">DoeAki</a>
             <div class="ms-auto">
                 <a class="nav-link d-inline px-2" href="{{ route('home') }}">Início</a>
-                <a class="nav-link d-inline px-2" href="{{ route('home') }}">Sobre nós</a>
                 <a class="btn btn-primary ms-2" href="/login">Login</a>
             </div>
         </nav>
     </header>
 
-    {{-- HERO --}}
     <section class="bg-dark text-white">
         <div class="container py-5">
             <div class="row align-items-center g-4">
@@ -33,7 +30,7 @@
                     <a class="btn btn-outline-light" href="#eventos">Ver eventos</a>
                 </div>
                 <div class="col-lg-6">
-                    <img class="img-fluid rounded" src="https://picsum.photos/seed/doeaki-hero/1200/600" alt="Ação de caridade">
+                    <img class="img-fluid rounded" src="{{ asset('img/doacaoCaridade.png') }}" alt="Banner DoeAki">
                 </div>
             </div>
         </div>
@@ -46,7 +43,7 @@
             {{-- CARD 1 --}}
             <div class="col-12 col-md-6 col-lg-4">
                 <div class="card h-100">
-                    <img src="https://picsum.photos/seed/agasalhos/800/480" class="card-img-top" alt="Campanha de Agasalhos">
+                    <img class="img-fluid rounded" src="{{ asset('img/agasalhos.png') }}" alt="Campanha de Agasalhos">
                     <div class="card-body">
                         <h3 class="h6 card-title mb-2">Campanha de Agasalhos</h3>
                         <p class="text-muted small mb-1">Data: 10/11/2025 • Local: Sede Central</p>
@@ -62,7 +59,7 @@
             {{-- CARD 2 --}}
             <div class="col-12 col-md-6 col-lg-4">
                 <div class="card h-100">
-                    <img src="https://picsum.photos/seed/brinquedos/800/480" class="card-img-top" alt="Arrecadação de Brinquedos">
+                    <img class="img-fluid rounded" src="{{ asset('img/brinquedos.png') }}" alt="Arrecadação de Brinquedos">
                     <div class="card-body">
                         <h3 class="h6 card-title mb-2">Arrecadação de Brinquedos</h3>
                         <p class="text-muted small mb-1">Data: 20/11/2025 • Local: Escola Comunitária</p>
@@ -78,7 +75,7 @@
             {{-- CARD 3 --}}
             <div class="col-12 col-md-6 col-lg-4">
                 <div class="card h-100">
-                    <img src="https://picsum.photos/seed/cestas/800/480" class="card-img-top" alt="Mutirão Cestas Básicas">
+                    <img class="img-fluid rounded" src="{{ asset('img/cestasBasicas.png') }}" alt="Mutirão Cestas Básicas">
                     <div class="card-body">
                         <h3 class="h6 card-title mb-2">Mutirão Cestas Básicas</h3>
                         <p class="text-muted small mb-1">Data: 05/12/2025 • Local: Centro Comunitário</p>
