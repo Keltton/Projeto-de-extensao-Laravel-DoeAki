@@ -7,6 +7,7 @@
 body {
     background-color: hsl(229, 100%, 91%);
     border-radius: 8px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
 .main-gerenciar {
