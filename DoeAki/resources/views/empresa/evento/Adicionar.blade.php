@@ -11,7 +11,7 @@
             <div class="col-md-10 offset-md-1">
 
 
-                <h1 class="mb-4">Editar seu evento</h1>
+                <h1 class="mb-4">Criar um novo evento</h1>
 
 
                 <form class="form" action="">
@@ -24,7 +24,7 @@
                     </div>
 
                     <div class="form-group row mt-5">
-                        <label class="col-lg-3 col-form-label form-control-label" for="dataEvento"><strong>Data do evento:</strong></label>
+                        <label class="col-lg-3 col-form-label form-control-label" for="dataEvento"><strong>Data de vencimento do evento:</strong></label>
                         <div class="col-lg-9">
                             <input class="form-control" type="date" name="dataEvento" id="dataEvento" required>
                         </div>

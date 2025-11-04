@@ -14,6 +14,8 @@ Route::get('/eventos', [EventoController::class, 'lista']) -> name('empresa.even
 
 Route::get('/gerenciar', [EventoController::class, 'gerenciar']) -> name('empresa.evento.gerenciar');
 
+Route::get('/adicionar', [EventoController::class, 'adicionar']) -> name('empresa.evento.adicionar');
+
 Route::get('/estoque', function () {
     return view('empresa.relatorios.estoque');
 })->name('empresa.relatorios.estoque');

@@ -13,9 +13,9 @@ class EventoController extends Controller
         return view('empresa.evento.lista');
     }
 
-    public function create()
+    public function adicionar()
     {
-        return view('empresa.evento.gerenciar');
+        return view('empresa.evento.adicionar');
     }
 
     public function gerenciar()
