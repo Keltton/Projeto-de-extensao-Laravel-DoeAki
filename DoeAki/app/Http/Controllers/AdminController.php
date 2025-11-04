@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 
 class AdminController extends Controller
 {
@@ -52,16 +53,27 @@ class AdminController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,
+            'role' => 'required|in:admin,user'
         ]);
 
-        $user->update($request->only(['name', 'email']));
+        $user->update($request->only(['name', 'email', 'role']));
 
         return redirect()->route('admin.users.index')->with('success', 'Usuário atualizado com sucesso!');
     }
 
     public function destroy(User $user)
     {
+        // Opcional: impedir admin de deletar ele mesmo
+        if (auth()->id() === $user->id) {
+            return back()->with('error', 'Você não pode deletar sua própria conta!');
+        }
+
         $user->delete();
         return redirect()->route('admin.users.index')->with('success', 'Usuário deletado com sucesso!');
+    }
+
+    public function show(User $user)
+    {
+        return redirect()->route('admin.users.index');
     }
 }

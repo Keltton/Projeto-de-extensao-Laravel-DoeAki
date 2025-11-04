@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Dashboard - DoeAki</title>
+    <title>Bem-Vindo {{ $user }} Dashboard - DoeAki</title>
     <style>
         * {
             margin: 0;
@@ -67,7 +67,7 @@
             <h1>Bem-vindo, {{ Auth::user()->name }}!</h1>
             <p>Você está logado como usuário comum.</p>
         </div>
-        <a href="{{ route('login') }}" class="btn">Sair</a>
+        <a href="{{ route('login') }}" class="btn">Continuar</a>
     </div>
 </body>
 </html>
