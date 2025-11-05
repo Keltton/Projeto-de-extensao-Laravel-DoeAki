@@ -13,24 +13,18 @@ class AdminUserSeeder extends Seeder
         // Usuário Admin
         User::create([
             'name' => 'Administrador',
-            'email' => 'admin@doeaki.com',
+            'email' => 'admin@email.com',
             'password' => Hash::make('admin123'),
             'role' => 'admin'
         ]);
 
         // Alguns usuários comuns para teste
         User::create([
-            'name' => 'João Silva',
-            'email' => 'joao@email.com',
-            'password' => Hash::make('senha123'),
+            'name' => 'Usuario',
+            'email' => 'Usuario@email.com',
+            'password' => Hash::make('usuario123'),
             'role' => 'user'
         ]);
 
-        User::create([
-            'name' => 'Maria Santos',
-            'email' => 'maria@email.com',
-            'password' => Hash::make('senha123'),
-            'role' => 'user'
-        ]);
     }
 }
