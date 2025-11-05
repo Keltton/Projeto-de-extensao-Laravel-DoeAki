@@ -10,11 +10,11 @@ class tipoItem extends Model
     use HasFactory;
 
     protected $fillable = [
-        'tipo_nome',
+        'tipoNome',
     ];
 
     public function eventos()
     {
-        return $this->hasMany(eventos::class, 'tipo_id');
+        return $this->hasMany(Evento::class, 'Id_tipo');
     }
 }

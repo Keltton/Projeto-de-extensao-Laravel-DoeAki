@@ -12,8 +12,6 @@
         <style>
             @import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c&display=swap');
         </style>
-
-        <link rel="stylesheet" href="./css/empresa/style.css">
         @vite([ 'resources/css/empresa/style.css'])
         @vite([ 'resources/js/app.js'])
     </head>
@@ -38,9 +36,9 @@
                         <i class="bi bi-calendar-event"></i><span class="ms-2">Eventos</span>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-dark text-small shadow" aria-labelledby="dropdown">
-                        <li><a class="dropdown-item" href="/eventos">Ver eventos</a></li>
-                        <li><a class="dropdown-item" href="/adicionar">Novo evento</a></li>
-                        <li><a class="dropdown-item" href="/gerenciar">Gerenciar eventos</a></li>
+                        <li><a class="dropdown-item" href="{{ route('empresa.evento.lista') }}">Ver eventos</a></li>
+                        <li><a class="dropdown-item" href="{{ route('empresa.evento.adicionar') }}">Novo evento</a></li>
+                        <li><a class="dropdown-item" href="{{ route('empresa.evento.lista') }}">Gerenciar eventos</a></li>
                     </ul>
                 </li>
 

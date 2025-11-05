@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class eventos extends Model
+class Evento extends Model
 {
     use HasFactory;
 
@@ -15,13 +15,13 @@ class eventos extends Model
         'data_vencimento',
         'data_criacao',
         'img_path',
-        'tipo_id',
+        'Id_tipo',
     ];
 
 
     public function tipoItem()
     {
-        return $this->belongsTo(tipoItem::class, 'tipo_id');
+        return $this->belongsTo(tipoItem::class, 'Id_tipo');
     }
 
 }

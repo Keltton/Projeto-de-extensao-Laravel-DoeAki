@@ -20,9 +20,10 @@ return new class extends Migration
             $table->text('descricao');
             $table->date('data_vencimento');
             $table->date('data_criacao')->default(now());
-            $table->string('descricao');
             $table->string('img_path');
-            $table->foreignId('tipo_id') -> constrained('tipo_items')->onDelete('cascade');     
+            $table->foreignId('Id_tipo') 
+            ->constrained('tipo_items')
+            ->onDelete('cascade');     
             
 
         });
