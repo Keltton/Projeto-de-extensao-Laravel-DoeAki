@@ -1,13 +1,14 @@
 <?php
-
+    
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\EmpresaController;
+use App\Http\Controllers\DonationController;
 use App\Http\Controllers\EventoController;
 
-//Route::get('/clients', [ClientController::class, 'index'])->name('clients.index');
+Route::view('/doacao', 'donations.create')->name('donations.create');
 
+Route::view('/doacao/obrigado', 'donations.thanks')->name('donations.thanks');
 
-
+Route::post('/doacao', [DonationController::class, 'store'])->name('donations.store');
 
 Route::get('/dashboard', [EventoController::class, 'dashboard']) -> name('empresa.dashboard');
 
