@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 
@@ -7,16 +6,52 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>DoeAki — Home</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        .evento-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .evento-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        .badge-status {
+            font-size: 0.7rem;
+        }
+    </style>
 </head>
 
 <body class="bg-light">
 
     <header class="bg-white border-bottom">
         <nav class="container navbar navbar-expand py-3">
-            <a class="navbar-brand fw-bold" href="{{ route('home') }}">DoeAki</a>
+            <a class="navbar-brand fw-bold text-danger" href="{{ url('/') }}">
+                <i class="bi bi-heart-fill me-1"></i>DoeAki
+            </a>
             <div class="ms-auto">
-                <a class="nav-link d-inline px-2" href="{{ route('home') }}">Início</a>
-                <a class="btn btn-primary ms-2" href="/login">Login</a>
+                <a class="nav-link d-inline px-2" href="{{ url('/') }}">Início</a>
+                <a class="nav-link d-inline px-2" href="{{ route('sobre') }}">Sobre</a>
+                @auth
+                    <div class="dropdown d-inline">
+                        <a class="btn btn-outline-primary dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle me-1"></i>{{ Auth::user()->name }}
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ route('user.dashboard') }}">Dashboard</a></li>
+                            <li><a class="dropdown-item" href="{{ route('user.perfil') }}">Meu Perfil</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form method="POST" action="{{ route('logout') }}" class="d-inline">
+                                    @csrf
+                                    <button type="submit" class="dropdown-item text-danger">Sair</button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                @else
+                    <a class="btn btn-outline-primary me-2" href="{{ route('login') }}">Login</a>
+                    <a class="btn btn-primary" href="{{ route('register') }}">Cadastrar</a>
+                @endauth
             </div>
         </nav>
     </header>
@@ -27,7 +62,11 @@
                 <div class="col-lg-6">
                     <h1 class="h2 fw-bold mb-2">Eventos de caridade</h1>
                     <p class="text-white-50 mb-3">Veja as campanhas ativas e faça login para participar com sua doação.</p>
-                    <a class="btn btn-primary me-2" href="/login">Quero doar</a>
+                    @auth
+                        <a class="btn btn-primary me-2" href="{{ route('user.doacoes.create') }}">Fazer Doação</a>
+                    @else
+                        <a class="btn btn-primary me-2" href="{{ route('register') }}">Quero doar</a>
+                    @endauth
                     <a class="btn btn-outline-light" href="#eventos">Ver eventos</a>
                 </div>
                 <div class="col-lg-6">
@@ -38,66 +77,181 @@
     </section>
 
     <main class="container my-5">
-        <h2 id="eventos" class="h4 fw-bold mb-3">Doações disponíveis</h2>
+        <h2 id="eventos" class="h4 fw-bold mb-4">Eventos Disponíveis</h2>
 
-        <div class="row g-4">
-            {{-- CARD 1 --}}
-            <div class="col-12 col-md-6 col-lg-4">
-                <div class="card h-100">
-                    <img class="img-fluid rounded" src="{{ asset('img/agasalhos.png') }}" alt="Campanha de Agasalhos">
-                    <div class="card-body">
-                        <h3 class="h6 card-title mb-2">Campanha de Agasalhos</h3>
-                        <p class="text-muted small mb-1">Data: 10/11/2025 • Local: Sede Central</p>
-                        <p class="text-muted small mb-0">Traga casacos e cobertores para aquecer quem precisa.</p>
+        {{-- Mensagens de sucesso/erro --}}
+        @if(session('success'))
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                {{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        @endif
+
+        @if(session('error'))
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                {{ session('error') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        @endif
+
+        {{-- Verifica se $eventos existe e tem dados --}}
+        @isset($eventos)
+            @if($eventos->count() > 0)
+                <div class="row g-4">
+                    @foreach($eventos as $evento)
+                        <div class="col-12 col-md-6 col-lg-4">
+                            <div class="card h-100 evento-card">
+                                {{-- Imagem do evento --}}
+                                @if($evento->imagem)
+                                    <img src="{{ asset('storage/' . $evento->imagem) }}" class="card-img-top" alt="{{ $evento->titulo }}" style="height: 200px; object-fit: cover;">
+                                @else
+                                    <div class="bg-secondary text-white d-flex align-items-center justify-content-center" style="height: 200px;">
+                                        <i class="bi bi-calendar-event display-4"></i>
+                                    </div>
+                                @endif
+                                
+                                <div class="card-body">
+                                    {{-- Status do evento --}}
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <span class="badge bg-{{ $evento->status == 'ativo' ? 'success' : ($evento->status == 'inativo' ? 'warning' : 'danger') }} badge-status">
+                                            {{ ucfirst($evento->status) }}
+                                        </span>
+                                        @if($evento->data_evento > now())
+                                            <small class="text-muted">{{ $evento->data_evento->diffForHumans() }}</small>
+                                        @endif
+                                    </div>
+
+                                    {{-- Título e descrição --}}
+                                    <h3 class="h6 card-title mb-2">{{ $evento->titulo }}</h3>
+                                    <p class="text-muted small mb-1">
+                                        <i class="bi bi-calendar me-1"></i>{{ $evento->data_evento->format('d/m/Y H:i') }}
+                                    </p>
+                                    <p class="text-muted small mb-2">
+                                        <i class="bi bi-geo-alt me-1"></i>{{ $evento->local }}
+                                    </p>
+                                    <p class="card-text small">{{ Str::limit($evento->descricao, 100) }}</p>
+
+                                    {{-- Vagas disponíveis --}}
+                                    @if($evento->vagas_total && $evento->vagas_total > 0)
+                                        <div class="mb-2">
+                                            <small class="text-muted">
+                                                Vagas: {{ $evento->vagas_disponiveis ?? $evento->vagas_total }} / {{ $evento->vagas_total }}
+                                            </small>
+                                            <div class="progress" style="height: 5px;">
+                                                @php
+                                                    $vagasDisponiveis = $evento->vagas_disponiveis ?? $evento->vagas_total;
+                                                    $percentualVagas = $vagasDisponiveis > 0 ? ($vagasDisponiveis / $evento->vagas_total) * 100 : 0;
+                                                    $corProgresso = $percentualVagas > 50 ? 'success' : ($percentualVagas > 20 ? 'warning' : 'danger');
+                                                @endphp
+                                                <div class="progress-bar bg-{{ $corProgresso }}" 
+                                                    style="width: {{ $percentualVagas }}%">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endif
+                                </div>
+
+                                <div class="card-footer bg-white d-flex justify-content-between align-items-center">
+                                    <a class="btn btn-outline-secondary btn-sm" 
+                                       href="{{ route('eventos.show', $evento->id) }}">
+                                        Detalhes
+                                    </a>
+                                    
+                                    @auth
+                                        @php
+                                                // AGORA FUNCIONA! O relacionamento está definido no Model User
+                                                $userInscrito = auth()->user()->inscricoes()
+                                                    ->where('evento_id', $evento->id)
+                                                    ->where('status', 'confirmada')
+                                                    ->exists();
+                                                
+                                                $vagasDisponiveis = $evento->vagas_disponiveis ?? $evento->vagas_total;
+                                                $temVagas = $vagasDisponiveis === null || $vagasDisponiveis > 0;
+                                            @endphp
+                                        
+                                        @if($userInscrito)
+                                            <form method="POST" action="{{ route('user.eventos.cancelar', $evento->id) }}" class="d-inline">
+                                                @csrf
+                                                <button type="submit" class="btn btn-outline-danger btn-sm">
+                                                    <i class="bi bi-x-circle me-1"></i>Cancelar
+                                                </button>
+                                            </form>
+                                        @else
+                                            <form method="POST" action="{{ route('user.eventos.inscrever', $evento->id) }}" class="d-inline">
+                                                @csrf
+                                                <button type="submit" 
+                                                        class="btn btn-primary btn-sm"
+                                                        {{ !$temVagas || $evento->status != 'ativo' ? 'disabled' : '' }}
+                                                        title="{{ !$temVagas ? 'Não há vagas disponíveis' : ($evento->status != 'ativo' ? 'Evento não está ativo' : 'Inscrever-se') }}">
+                                                    <i class="bi bi-check-circle me-1"></i>
+                                                    @if(!$temVagas)
+                                                        Lotado
+                                                    @elseif($evento->status != 'ativo')
+                                                        Indisponível
+                                                    @else
+                                                        Inscrever
+                                                    @endif
+                                                </button>
+                                            </form>
+                                        @endif
+                                    @else
+                                        <a class="btn btn-primary btn-sm" href="{{ route('login') }}">
+                                            <i class="bi bi-box-arrow-in-right me-1"></i>Inscrever
+                                        </a>
+                                    @endauth
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+
+                {{-- Paginação --}}
+                @if($eventos->hasPages())
+                    <div class="d-flex justify-content-center mt-5">
+                        {{ $eventos->links() }}
                     </div>
-                    <div class="card-footer bg-white d-flex justify-content-end gap-2">
-                        <a class="btn btn-outline-secondary btn-sm" href="/login">Detalhes</a>
-                        <a class="btn btn-primary btn-sm" href="/login">Quero doar</a>
+                @endif
+            @else
+                {{-- Se não há eventos --}}
+                <div class="col-12">
+                    <div class="text-center py-5">
+                        <i class="bi bi-calendar-x display-1 text-muted"></i>
+                        <h4 class="text-muted mt-3">Nenhum evento disponível no momento</h4>
+                        <p class="text-muted">Volte em breve para conferir novas oportunidades de doação.</p>
+                        @auth
+                            <a href="{{ route('eventos.index') }}" class="btn btn-primary mt-3">
+                                Ver Todos os Eventos
+                            </a>
+                        @endif
                     </div>
                 </div>
-            </div>
-
-            {{-- CARD 2 --}}
-            <div class="col-12 col-md-6 col-lg-4">
-                <div class="card h-100">
-                    <img class="img-fluid rounded" src="{{ asset('img/brinquedos.png') }}" alt="Arrecadação de Brinquedos">
-                    <div class="card-body">
-                        <h3 class="h6 card-title mb-2">Arrecadação de Brinquedos</h3>
-                        <p class="text-muted small mb-1">Data: 20/11/2025 • Local: Escola Comunitária</p>
-                        <p class="text-muted small mb-0">Doe brinquedos em bom estado para alegrar crianças.</p>
-                    </div>
-                    <div class="card-footer bg-white d-flex justify-content-end gap-2">
-                        <a class="btn btn-outline-secondary btn-sm" href="/login">Detalhes</a>
-                        <a class="btn btn-primary btn-sm" href="/login">Quero doar</a>
-                    </div>
+            @endif
+        @else
+            {{-- Se $eventos não foi definida --}}
+            <div class="col-12">
+                <div class="text-center py-5">
+                    <i class="bi bi-exclamation-triangle display-1 text-warning"></i>
+                    <h4 class="text-muted mt-3">Sistema em configuração</h4>
+                    <p class="text-muted">Os eventos estarão disponíveis em breve.</p>
                 </div>
             </div>
-
-            {{-- CARD 3 --}}
-            <div class="col-12 col-md-6 col-lg-4">
-                <div class="card h-100">
-                    <img class="img-fluid rounded" src="{{ asset('img/cestasBasicas.png') }}" alt="Mutirão Cestas Básicas">
-                    <div class="card-body">
-                        <h3 class="h6 card-title mb-2">Mutirão Cestas Básicas</h3>
-                        <p class="text-muted small mb-1">Data: 05/12/2025 • Local: Centro Comunitário</p>
-                        <p class="text-muted small mb-0">Ajude com alimentos não perecíveis para montagem de cestas.</p>
-                    </div>
-                    <div class="card-footer bg-white d-flex justify-content-end gap-2">
-                        <a class="btn btn-outline-secondary btn-sm" href="/login">Detalhes</a>
-                        <a class="btn btn-primary btn-sm" href="/login">Quero doar</a>
-                    </div>
-                </div>
-            </div>
-        </div>
+        @endisset
     </main>
 
-    <footer class="border-top">
-        <div class="container py-3">
-            <small class="text-muted">© {{ date('Y') }} DoeAki — Conectando doadores e instituições.</small>
+    <footer class="border-top bg-white mt-5">
+        <div class="container py-4">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5 class="fw-bold">DoeAki</h5>
+                    <p class="text-muted small">Conectando doadores e instituições para um mundo mais solidário.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <small class="text-muted">© {{ date('Y') }} DoeAki — Todos os direitos reservados.</small>
+                </div>
+            </div>
         </div>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
-
 </html>

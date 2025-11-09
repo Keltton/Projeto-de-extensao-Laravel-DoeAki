@@ -1,65 +1,160 @@
 <?php
 
+use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\CategoriaController;
+use App\Http\Controllers\ItemController;
+use App\Http\Controllers\RelatorioController;
+use App\Http\Controllers\EventoController;
 use App\Http\Controllers\UserController;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\DoacaoController;
+use App\Http\Controllers\HomeController;
 
+/*
+|--------------------------------------------------------------------------
+| Rotas Públicas
+|--------------------------------------------------------------------------
+*/
 
-// Rota principal - Página inicial (Welcome)
-Route::get('/', function () {
-    return view('welcome'); 
-});
+// Home page
+Route::get('/', [HomeController::class, 'index'])->name('home');
 
-// Rotas de Autenticação 
-Route::get('/home', [AuthController::class, 'welcome'])->name('home');
+// Página Sobre
+Route::get('/sobre', function () {
+    return view('sobre');
+})->name('sobre');
+
+// Rotas públicas de eventos
+Route::get('/eventos', [EventoController::class, 'index'])->name('eventos.index');
+Route::get('/eventos/{id}', [EventoController::class, 'show'])->name('eventos.show');
+
+// Autenticação
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
 Route::post('/register', [AuthController::class, 'register']);
-Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-// Essa rota agrupa todas as rotas administrativas, garantindo que apenas usuários autenticados com a função de administrador possam acessá-las.
-Route::prefix('admin')->middleware(['auth', 'is_admin'])->group(function() {
-    Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
-    Route::resource('users', AdminController::class)->names('admin.users')->except('show'); // Rotas de gerenciamento de usuários
+/*
+|--------------------------------------------------------------------------
+| Painel do Usuário (Apenas usuários logados)
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware(['auth'])->prefix('user')->name('user.')->group(function () {
+
+    // 📌 Dashboard
+    Route::get('/dashboard', [UserController::class, 'dashboard'])->name('dashboard');
+
+    // 📌 Perfil do Usuário
+    Route::get('/perfil', [UserController::class, 'perfil'])->name('perfil');
+    Route::post('/perfil/atualizar', [UserController::class, 'atualizarPerfil'])->name('perfil.atualizar');
+    Route::post('/perfil/senha', [UserController::class, 'atualizarSenha'])->name('perfil.senha');
+
+    // 📌 Doações
+    Route::prefix('doacoes')->name('doacoes.')->group(function () {
+        Route::get('/', [DoacaoController::class, 'index'])->name('index');
+        Route::get('/nova', [DoacaoController::class, 'create'])->name('create');
+        Route::post('/', [DoacaoController::class, 'store'])->name('store');
+        Route::get('/{id}', [DoacaoController::class, 'show'])->name('show');
+        Route::delete('/{id}', [DoacaoController::class, 'destroy'])->name('destroy');
+    });
+
+    // 📌 Eventos do Usuário
+    Route::prefix('eventos')->name('eventos.')->group(function () {
+        Route::get('/meus', [EventoController::class, 'meusEventos'])->name('meus');
+        Route::post('/{evento}/inscrever', [EventoController::class, 'inscrever'])->name('inscrever');
+        Route::post('/{evento}/cancelar', [EventoController::class, 'cancelarInscricao'])->name('cancelar');
+    });
 });
 
+/*
+|--------------------------------------------------------------------------
+| Painel do Admin (Apenas administradores)
+|--------------------------------------------------------------------------
+*/
 
-// Rotas para gerenciamento de usuários pelo Admin
-Route::get('/admin/users', [AdminController::class, 'index'])->name('admin.users.index');
-Route::get('/admin/users/create', [AdminController::class, 'create'])->name('admin.users.create');
-Route::post('/admin/users', [AdminController::class, 'store'])->name('admin.users.store');
-Route::get('/admin/users/{user}/edit', [AdminController::class, 'edit'])->name('admin.users.edit');
-Route::put('/admin/users/{user}', [AdminController::class, 'update'])->name('admin.users.update');
-Route::delete('/admin/users/{user}', [AdminController::class, 'destroy'])->name('admin.users.destroy');
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
 
+    // Dashboard
+    Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
 
-    // User Management
-    Route::resource('users', AdminController::class)->names([
-        'index' => 'admin.users.index',
-        'create' => 'admin.users.create',
-        'store' => 'admin.users.store',
-        'edit' => 'admin.users.edit',
-        'update' => 'admin.users.update',
-        'destroy' => 'admin.users.destroy'
-    ]);
+    // 📌 Gestão de Usuários
+    Route::prefix('users')->name('users.')->group(function () {
+        Route::get('/', [AdminController::class, 'index'])->name('index');
+        Route::get('/create', [AdminController::class, 'create'])->name('create');
+        Route::post('/', [AdminController::class, 'store'])->name('store');
+        Route::get('/{user}/edit', [AdminController::class, 'edit'])->name('edit');
+        Route::put('/{user}', [AdminController::class, 'update'])->name('update');
+        Route::delete('/{user}', [AdminController::class, 'destroy'])->name('destroy');
+        Route::post('/{user}/reset-password', [AdminController::class, 'resetPassword'])->name('reset-password');
+    });
 
+    // 📌 Gestão de Itens
+    Route::prefix('itens')->name('itens.')->group(function () {
+        Route::get('/', [ItemController::class, 'index'])->name('index');
+        Route::get('/create', [ItemController::class, 'create'])->name('create');
+        Route::post('/', [ItemController::class, 'store'])->name('store');
+        Route::get('/{item}/edit', [ItemController::class, 'edit'])->name('edit');
+        Route::put('/{item}', [ItemController::class, 'update'])->name('update');
+        Route::delete('/{item}', [ItemController::class, 'destroy'])->name('destroy');
+    });
 
+    // 📌 Gestão de Categorias
+    Route::prefix('categorias')->name('categorias.')->group(function () {
+        Route::get('/', [CategoriaController::class, 'index'])->name('index');
+        Route::get('/create', [CategoriaController::class, 'create'])->name('create');
+        Route::post('/', [CategoriaController::class, 'store'])->name('store');
+        Route::get('/{categoria}/edit', [CategoriaController::class, 'edit'])->name('edit');
+        Route::put('/{categoria}', [CategoriaController::class, 'update'])->name('update');
+        Route::delete('/{categoria}', [CategoriaController::class, 'destroy'])->name('destroy');
+    });
 
-    
-// Rotas de Usuário 
-Route::middleware(['auth'])->group(function () {
-Route::get('/user/dashboard', [UserController::class, 'dashboard'])->name('user.dashboard');
+    // 📌 Gestão de Eventos
+    Route::prefix('eventos')->name('eventos.')->group(function () {
+        Route::get('/', [EventoController::class, 'adminIndex'])->name('index');
+        Route::get('/create', [EventoController::class, 'create'])->name('create');
+        Route::post('/', [EventoController::class, 'store'])->name('store');
+        Route::get('/{id}', [EventoController::class, 'adminShow'])->name('show');
+        Route::get('/{id}/edit', [EventoController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [EventoController::class, 'update'])->name('update');
+        Route::delete('/{id}', [EventoController::class, 'destroy'])->name('destroy');
+        Route::get('/{id}/inscricoes', [EventoController::class, 'inscricoes'])->name('inscricoes');
+        Route::post('/{id}/toggle-status', [EventoController::class, 'toggleStatus'])->name('toggle-status');
+        Route::get('/{id}/exportar-inscricoes', [EventoController::class, 'exportarInscricoes'])->name('exportar-inscricoes');
+    });
+
+    // 📌 Gestão de Doações
+    Route::prefix('doacoes')->name('doacoes.')->group(function () {
+        Route::get('/gerenciar', [AdminController::class, 'gerenciarDoacoes'])->name('gerenciar');
+        Route::post('/{id}/aprovar', [AdminController::class, 'aprovarDoacao'])->name('aprovar');
+        Route::post('/{id}/rejeitar', [AdminController::class, 'rejeitarDoacao'])->name('rejeitar');
+        Route::post('/{id}/entregue', [AdminController::class, 'marcarEntregue'])->name('entregue');
+        Route::get('/relatorio', [AdminController::class, 'relatorioItens'])->name('relatorio');
+        Route::get('/{id}', [AdminController::class, 'showDoacao'])->name('show');
+    });
+
+    // 📌 Relatórios
+    Route::prefix('relatorios')->name('relatorios.')->group(function () {
+        Route::get('/', [RelatorioController::class, 'index'])->name('index');
+        Route::get('/dados', [RelatorioController::class, 'dashboardData'])->name('dados');
+        Route::get('/geral', [AdminController::class, 'relatorioGeral'])->name('geral');
+        Route::get('/doacoes', [RelatorioController::class, 'relatorioDoacoes'])->name('doacoes');
+        Route::get('/usuarios', [RelatorioController::class, 'relatorioUsuarios'])->name('usuarios');
+        Route::get('/itens', [AdminController::class, 'relatorioItens'])->name('itens');
+    });
+
+    // 📌 Calendário de Eventos
+    Route::get('/calendario', [EventoController::class, 'calendario'])->name('calendario');
 });
 
-Route::prefix('admin/itens')->middleware(['auth', 'is_admin'])->name('admin.itens.')->group(function () {
-    Route::get('/', [AdminController::class, 'indexItens'])->name('index');
-    Route::get('/create', [AdminController::class, 'createItem'])->name('create');
-    Route::post('/', [AdminController::class, 'storeItem'])->name('store');
-    Route::get('/{item}/edit', [AdminController::class, 'editItem'])->name('edit');
-    Route::put('/{item}', [AdminController::class, 'updateItem'])->name('update');
-    Route::delete('/{item}', [AdminController::class, 'destroyItem'])->name('destroy');
+/*
+|--------------------------------------------------------------------------
+| Rotas de Fallback
+|--------------------------------------------------------------------------
+*/
+
+Route::fallback(function () {
+    return response()->view('errors.404', [], 404);
 });
-
-

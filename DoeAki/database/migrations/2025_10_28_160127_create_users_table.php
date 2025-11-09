@@ -14,7 +14,18 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->enum('role', ['user', 'admin'])->default('user'); // Já incluindo o role aqui
+            
+            // Campos adicionais
+            $table->string('telefone')->nullable();
+            $table->string('cpf')->nullable();
+            $table->string('endereco')->nullable();
+            $table->string('cidade')->nullable();
+            $table->string('estado')->nullable();
+            $table->string('cep')->nullable();
+            $table->text('sobre')->nullable();
+            $table->boolean('cadastro_completo')->default(false);
+            $table->string('role')->default('user'); // Adiciona o campo de função
+            
             $table->rememberToken();
             $table->timestamps();
         });
