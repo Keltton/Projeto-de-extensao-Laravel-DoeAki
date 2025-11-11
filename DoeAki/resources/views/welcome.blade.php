@@ -44,7 +44,6 @@
                                 <i class="bi bi-person me-2"></i>Meu Perfil
                             </a></li>
                             
-                            <!-- Seção Eventos -->
                             <li><hr class="dropdown-divider"></li>
                             <li><h6 class="dropdown-header">Eventos</h6></li>
                             <li><a class="dropdown-item" href="{{ route('user.eventos.meus') }}">
@@ -54,7 +53,6 @@
                                 <i class="bi bi-calendar-event me-2"></i>Explorar Eventos
                             </a></li>
                             
-                            <!-- Seção Doações -->
                             @if(Route::has('user.doacoes.index'))
                             <li><hr class="dropdown-divider"></li>
                             <li><h6 class="dropdown-header">Doações</h6></li>
@@ -103,7 +101,7 @@
     </section>
 
     <main class="container my-5">
-        <h2 id="eventos" class="h4 fw-bold mb-4">Eventos Disponíveis</h2>
+        <h2 id="eventos" class="h4 fw-bold mb-4">Eventos em Destaque</h2>
 
         {{-- Mensagens de sucesso/erro --}}
         @if(session('success'))
@@ -124,15 +122,18 @@
         @isset($eventos)
             @if($eventos->count() > 0)
                 <div class="row g-4">
-                    @foreach($eventos as $evento)
+                    @foreach($eventos->take(3) as $evento)
                         <div class="col-12 col-md-6 col-lg-4">
                             <div class="card h-100 evento-card">
                                 {{-- Imagem do evento --}}
-                                @if($evento->imagem)
+                                @if($evento->imagem && file_exists(public_path($evento->imagem)))
                                     <img src="{{ asset($evento->imagem) }}" class="card-img-top" alt="{{ $evento->nome }}" style="height: 200px; object-fit: cover;">
                                 @else
                                     <div class="bg-secondary text-white d-flex align-items-center justify-content-center" style="height: 200px;">
-                                        <i class="bi bi-calendar-event display-4"></i>
+                                        <div class="text-center">
+                                            <i class="bi bi-calendar-event display-4"></i>
+                                            <p class="mt-2 small">Sem imagem</p>
+                                        </div>
                                     </div>
                                 @endif
                                 
@@ -177,66 +178,25 @@
                                     @endif
                                 </div>
 
-                                <div class="card-footer bg-white d-flex justify-content-between align-items-center">
-                                    <a class="btn btn-outline-secondary btn-sm" 
+                                {{-- APENAS BOTÃO DETALHES --}}
+                                <div class="card-footer bg-white text-center">
+                                    <a class="btn btn-primary btn-sm" 
                                        href="{{ route('eventos.show', $evento->id) }}">
-                                        Detalhes
+                                        <i class="bi bi-eye me-1"></i>Ver Detalhes
                                     </a>
-                                    
-                                    @auth
-                                        @php
-                                            // AGORA FUNCIONA! O relacionamento está definido no Model User
-                                            $userInscrito = auth()->user()->inscricoes()
-                                                ->where('evento_id', $evento->id)
-                                                ->where('status', 'confirmada')
-                                                ->exists();
-                                            
-                                            $vagasDisponiveis = $evento->vagas_disponiveis ?? $evento->vagas_total;
-                                            $temVagas = $vagasDisponiveis === null || $vagasDisponiveis > 0;
-                                        @endphp
-                                    
-                                        @if($userInscrito)
-                                            <form method="POST" action="{{ route('user.eventos.cancelar', $evento->id) }}" class="d-inline">
-                                                @csrf
-                                                <button type="submit" class="btn btn-outline-danger btn-sm">
-                                                    <i class="bi bi-x-circle me-1"></i>Cancelar
-                                                </button>
-                                            </form>
-                                        @else
-                                            <form method="POST" action="{{ route('user.eventos.inscrever', $evento->id) }}" class="d-inline">
-                                                @csrf
-                                                <button type="submit" 
-                                                        class="btn btn-primary btn-sm"
-                                                        {{ !$temVagas || $evento->status != 'ativo' ? 'disabled' : '' }}
-                                                        title="{{ !$temVagas ? 'Não há vagas disponíveis' : ($evento->status != 'ativo' ? 'Evento não está ativo' : 'Inscrever-se') }}">
-                                                    <i class="bi bi-check-circle me-1"></i>
-                                                    @if(!$temVagas)
-                                                        Lotado
-                                                    @elseif($evento->status != 'ativo')
-                                                        Indisponível
-                                                    @else
-                                                        Inscrever
-                                                    @endif
-                                                </button>
-                                            </form>
-                                        @endif
-                                    @else
-                                        <a class="btn btn-primary btn-sm" href="{{ route('login') }}">
-                                            <i class="bi bi-box-arrow-in-right me-1"></i>Inscrever
-                                        </a>
-                                    @endauth
                                 </div>
                             </div>
                         </div>
                     @endforeach
                 </div>
 
-                {{-- Paginação --}}
-                @if($eventos->hasPages())
-                    <div class="d-flex justify-content-center mt-5">
-                        {{ $eventos->links() }}
-                    </div>
-                @endif
+                {{-- Link para ver todos os eventos --}}
+                <div class="text-center mt-4">
+                    <a href="{{ route('eventos.index') }}" class="btn btn-outline-primary btn-lg">
+                        <i class="bi bi-list-ul me-2"></i>Ver Todos os {{ $eventos->count() }} Eventos
+                    </a>
+                </div>
+
             @else
                 {{-- Se não há eventos --}}
                 <div class="col-12">

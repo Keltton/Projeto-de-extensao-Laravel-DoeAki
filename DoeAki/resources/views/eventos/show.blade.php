@@ -9,42 +9,12 @@
             <i class="bi bi-arrow-left me-1"></i> Voltar para Eventos
         </a>
         
-        @auth
-            @php
-                $userInscrito = auth()->user()->inscricoes()
-                    ->where('evento_id', $evento->id)
-                    ->where('status', 'confirmada')
-                    ->exists();
-                $vagasDisponiveis = $evento->vagas_disponiveis ?? $evento->vagas_total;
-                $temVagas = $vagasDisponiveis === null || $vagasDisponiveis > 0;
-            @endphp
-            
-            @if($userInscrito)
-                <span class="badge bg-success fs-6 py-2">
-                    <i class="bi bi-check-circle me-1"></i>Você está inscrito neste evento
-                </span>
-            @else
-                <form method="POST" action="{{ route('user.eventos.inscrever', $evento->id) }}" class="d-inline">
-                    @csrf
-                    <button type="submit" 
-                            class="btn btn-primary btn-lg"
-                            {{ !$temVagas || $evento->status != 'ativo' ? 'disabled' : '' }}>
-                        <i class="bi bi-check-circle me-1"></i>
-                        @if(!$temVagas)
-                            Evento Lotado
-                        @elseif($evento->status != 'ativo')
-                            Evento Indisponível
-                        @else
-                            Inscrever-se no Evento
-                        @endif
-                    </button>
-                </form>
-            @endif
-        @else
+        {{-- Botão simplificado apenas para login --}}
+        @guest
             <a class="btn btn-primary btn-lg" href="{{ route('login') }}">
-                <i class="bi bi-box-arrow-in-right me-1"></i> Fazer Login para Inscrever-se
+                <i class="bi bi-box-arrow-in-right me-1"></i> Fazer Login
             </a>
-        @endauth
+        @endguest
     </div>
 
     @if(session('success'))
@@ -67,11 +37,14 @@
         <!-- Conteúdo Principal -->
         <div class="col-lg-8">
             <div class="card shadow-sm border-0 mb-4">
-                @if($evento->imagem)
+                @if($evento->imagem && file_exists(public_path($evento->imagem)))
                     <img src="{{ asset($evento->imagem) }}" class="card-img-top" alt="{{ $evento->nome }}" style="height: 400px; object-fit: cover;">
                 @else
                     <div class="bg-secondary text-white d-flex align-items-center justify-content-center" style="height: 300px;">
-                        <i class="bi bi-calendar-event display-1"></i>
+                        <div class="text-center">
+                            <i class="bi bi-calendar-event display-1"></i>
+                            <p class="mt-2">Sem imagem</p>
+                        </div>
                     </div>
                 @endif
                 
@@ -164,42 +137,9 @@
                     @if($evento->inscricoes->count() > 0)
                         <div class="mb-3">
                             <h6 class="fw-bold">Inscritos</h6>
-                            <p class="mb-0">{{ $evento->inscricoes->count() }} pessoa(s)</p>
+                            <p class="mb-0">{{ $evento->inscricoes->where('status', 'confirmada')->count() }} pessoa(s)</p>
                         </div>
                     @endif
-                </div>
-            </div>
-
-            <!-- Ação de Inscrição Mobile -->
-            <div class="card shadow-sm border-0 d-lg-none">
-                <div class="card-body text-center">
-                    @auth
-                        @if($userInscrito)
-                            <span class="badge bg-success fs-6 py-2">
-                                <i class="bi bi-check-circle me-1"></i>Inscrito
-                            </span>
-                        @else
-                            <form method="POST" action="{{ route('user.eventos.inscrever', $evento->id) }}" class="d-inline w-100">
-                                @csrf
-                                <button type="submit" 
-                                        class="btn btn-primary w-100"
-                                        {{ !$temVagas || $evento->status != 'ativo' ? 'disabled' : '' }}>
-                                    <i class="bi bi-check-circle me-1"></i>
-                                    @if(!$temVagas)
-                                        Evento Lotado
-                                    @elseif($evento->status != 'ativo')
-                                        Evento Indisponível
-                                    @else
-                                        Inscrever-se
-                                    @endif
-                                </button>
-                            </form>
-                        @endif
-                    @else
-                        <a class="btn btn-primary w-100" href="{{ route('login') }}">
-                            <i class="bi bi-box-arrow-in-right me-1"></i> Fazer Login
-                        </a>
-                    @endauth
                 </div>
             </div>
         </div>

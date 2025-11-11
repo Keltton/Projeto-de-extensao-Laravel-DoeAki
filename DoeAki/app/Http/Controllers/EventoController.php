@@ -17,8 +17,7 @@ class EventoController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Evento::where('status', 'ativo')
-            ->where('data_evento', '>=', now());
+        $query = Evento::where('status', 'ativo');
 
         // Filtro de busca
         if ($request->has('search') && $request->search) {
@@ -56,20 +55,9 @@ class EventoController extends Controller
                 ->exists();
         }
 
-        // Verifica se a view existe
-        if (view()->exists('eventos.show')) {
-            return view('eventos.show', compact('evento', 'userInscrito'));
-        } else {
-            // Fallback simples
-            return response("
-            <h1>{$evento->nome}</h1>
-            <p>{$evento->descricao}</p>
-            <p>Data: {$evento->data_evento->format('d/m/Y H:i')}</p>
-            <p>Local: {$evento->local}</p>
-            <a href='" . route('eventos.index') . "'>← Voltar para Eventos</a>
-        ");
-        }
+        return view('eventos.show', compact('evento', 'userInscrito'));
     }
+
     /**
      * Meus eventos inscritos (usuário logado)
      */
@@ -260,10 +248,15 @@ class EventoController extends Controller
                 $dados['vagas_disponiveis'] = $request->vagas_total;
             }
 
-            // Upload da imagem - SALVAR NA PASTA PUBLIC
+            // Upload da imagem - SALVAR NA PASTA PUBLIC/images/eventos
             if ($request->hasFile('imagem')) {
                 $imagem = $request->file('imagem');
                 $nomeImagem = 'evento_' . time() . '.' . $imagem->getClientOriginalExtension();
+
+                // Criar diretório se não existir
+                if (!file_exists(public_path('images/eventos'))) {
+                    mkdir(public_path('images/eventos'), 0755, true);
+                }
 
                 // Salvar na pasta public/images/eventos
                 $imagem->move(public_path('images/eventos'), $nomeImagem);
@@ -281,6 +274,7 @@ class EventoController extends Controller
                 ->withInput();
         }
     }
+
     /**
      * Show the form for editing the specified resource (Admin)
      */
@@ -323,7 +317,7 @@ class EventoController extends Controller
                 $dados['imagem'] = null;
             }
 
-            // Upload da nova imagem - SALVAR NA PASTA PUBLIC
+            // Upload da nova imagem - SALVAR NA PASTA PUBLIC/images/eventos
             if ($request->hasFile('imagem')) {
                 // Remove imagem antiga
                 if ($evento->imagem && file_exists(public_path($evento->imagem))) {
@@ -332,6 +326,11 @@ class EventoController extends Controller
 
                 $imagem = $request->file('imagem');
                 $nomeImagem = 'evento_' . time() . '.' . $imagem->getClientOriginalExtension();
+
+                // Criar diretório se não existir
+                if (!file_exists(public_path('images/eventos'))) {
+                    mkdir(public_path('images/eventos'), 0755, true);
+                }
 
                 // Salvar na pasta public/images/eventos
                 $imagem->move(public_path('images/eventos'), $nomeImagem);
@@ -359,6 +358,7 @@ class EventoController extends Controller
                 ->withInput();
         }
     }
+
     /**
      * Remove the specified resource from storage (Admin)
      */
@@ -422,7 +422,9 @@ class EventoController extends Controller
         return view('admin.eventos.inscricoes', compact('evento', 'inscricoes'));
     }
 
-
+    /**
+     * Exportar inscrições para CSV
+     */
     public function exportarInscricoes($id)
     {
         try {

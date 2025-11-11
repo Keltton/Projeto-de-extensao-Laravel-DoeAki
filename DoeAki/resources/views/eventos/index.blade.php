@@ -65,11 +65,15 @@
             @foreach($eventos as $evento)
                 <div class="col-12 col-md-6 col-lg-4">
                     <div class="card h-100 shadow-sm border-0 evento-card">
-                        @if($evento->imagem)
+                        {{-- Imagem do evento --}}
+                        @if($evento->imagem && file_exists(public_path($evento->imagem)))
                             <img src="{{ asset($evento->imagem) }}" class="card-img-top" alt="{{ $evento->nome }}" style="height: 200px; object-fit: cover;">
                         @else
                             <div class="bg-secondary text-white d-flex align-items-center justify-content-center" style="height: 200px;">
-                                <i class="bi bi-calendar-event display-4"></i>
+                                <div class="text-center">
+                                    <i class="bi bi-calendar-event display-4"></i>
+                                    <p class="mt-2 small">Sem imagem</p>
+                                </div>
                             </div>
                         @endif
                         
@@ -154,13 +158,45 @@
             @endforeach
         </div>
 
-        <!-- Paginação -->
+        <!-- Paginação Simples -->
         @if($eventos->hasPages())
-            <div class="d-flex justify-content-center mt-5">
-                {{ $eventos->appends(request()->query())->links() }}
+            <div class="d-flex justify-content-center mt-4">
+                <nav aria-label="Navegação de páginas">
+                    <ul class="pagination">
+                        {{-- Botão Anterior --}}
+                        <li class="page-item {{ $eventos->onFirstPage() ? 'disabled' : '' }}">
+                            <a class="page-link" href="{{ $eventos->previousPageUrl() }}" aria-label="Anterior">
+                                <i class="bi bi-chevron-left me-1"></i>Anterior
+                            </a>
+                        </li>
+
+                        {{-- Números das páginas --}}
+                        @foreach(range(1, $eventos->lastPage()) as $page)
+                            <li class="page-item {{ $eventos->currentPage() === $page ? 'active' : '' }}">
+                                <a class="page-link" href="{{ $eventos->url($page) }}">{{ $page }}</a>
+                            </li>
+                        @endforeach
+
+                        {{-- Botão Próximo --}}
+                        <li class="page-item {{ !$eventos->hasMorePages() ? 'disabled' : '' }}">
+                            <a class="page-link" href="{{ $eventos->nextPageUrl() }}" aria-label="Próximo">
+                                Próximo<i class="bi bi-chevron-right ms-1"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+
+            {{-- Informação de resultados --}}
+            <div class="text-center mt-2">
+                <small class="text-muted">
+                    Mostrando {{ $eventos->firstItem() }} a {{ $eventos->lastItem() }} de {{ $eventos->total() }} resultados
+                </small>
             </div>
         @endif
+
     @else
+        {{-- Se não há eventos --}}
         <div class="text-center py-5">
             <i class="bi bi-calendar-x display-1 text-muted mb-3"></i>
             <h4 class="text-muted">
