@@ -1,44 +1,97 @@
 <?php
-// database/migrations/2025_11_09_xxxxxx_add_estoque_and_approval_fields_to_doacoes_table.php
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
-    public function up()
+    public function up(): void
     {
         Schema::table('doacoes', function (Blueprint $table) {
-            // Primeiro adiciona as colunas básicas
-            $table->timestamp('data_aprovacao')->nullable()->after('data_doacao');
-            $table->timestamp('data_rejeicao')->nullable()->after('data_aprovacao');
-            $table->timestamp('data_entrega')->nullable()->after('data_rejeicao');
-            $table->text('motivo_rejeicao')->nullable()->after('data_entrega');
-            
-            // Depois adiciona as colunas de estoque
-            $table->boolean('adicionado_estoque')->default(false)->after('motivo_rejeicao');
-            $table->timestamp('data_entrada_estoque')->nullable()->after('adicionado_estoque');
-            $table->unsignedBigInteger('aprovado_por')->nullable()->after('data_entrada_estoque');
-            
-            // Chave estrangeira
-            $table->foreign('aprovado_por')->references('id')->on('users');
+            // Adiciona apenas as colunas que não existem
+            if (!Schema::hasColumn('doacoes', 'entregue')) {
+                $table->boolean('entregue')->default(false)->after('status');
+            }
+
+            if (!Schema::hasColumn('doacoes', 'data_entrega')) {
+                $afterColumn = Schema::hasColumn('doacoes', 'entregue') ? 'entregue' : null;
+                if ($afterColumn) {
+                    $table->timestamp('data_entrega')->nullable()->after($afterColumn);
+                } else {
+                    $table->timestamp('data_entrega')->nullable();
+                }
+            }
+
+            if (!Schema::hasColumn('doacoes', 'data_aprovacao')) {
+                $table->timestamp('data_aprovacao')->nullable()->after('status');
+            }
+
+            if (!Schema::hasColumn('doacoes', 'data_rejeicao')) {
+                $table->timestamp('data_rejeicao')->nullable()->after('data_aprovacao');
+            }
+
+            if (!Schema::hasColumn('doacoes', 'motivo_rejeicao')) {
+                $table->text('motivo_rejeicao')->nullable()->after('data_rejeicao');
+            }
+
+            if (!Schema::hasColumn('doacoes', 'adicionado_estoque')) {
+                $table->boolean('adicionado_estoque')->default(false)->after('motivo_rejeicao');
+            }
+
+            if (!Schema::hasColumn('doacoes', 'data_entrada_estoque')) {
+                $table->timestamp('data_entrada_estoque')->nullable()->after('adicionado_estoque');
+            }
+
+            if (!Schema::hasColumn('doacoes', 'aprovado_por')) {
+                $table->unsignedBigInteger('aprovado_por')->nullable()->after('data_entrada_estoque');
+                $table->foreign('aprovado_por')
+                    ->references('id')
+                    ->on('users')
+                    ->onDelete('set null');
+            }
         });
     }
 
-    public function down()
+    public function down(): void
     {
-        Schema::table('doacoes', function (Blueprint $table) {
-            $table->dropForeign(['aprovado_por']);
-            $table->dropColumn([
-                'data_aprovacao',
-                'data_rejeicao', 
+        if (!Schema::hasTable('doacoes')) {
+            return;
+        }
+
+        // 🧩 Verifica e remove FK apenas se existir no banco
+        $foreignKeys = DB::select("
+            SELECT CONSTRAINT_NAME
+            FROM information_schema.KEY_COLUMN_USAGE
+            WHERE TABLE_NAME = 'doacoes'
+              AND CONSTRAINT_SCHEMA = DATABASE()
+              AND REFERENCED_TABLE_NAME IS NOT NULL
+        ");
+
+        Schema::table('doacoes', function (Blueprint $table) use ($foreignKeys) {
+            foreach ($foreignKeys as $fk) {
+                if ($fk->CONSTRAINT_NAME === 'doacoes_aprovado_por_foreign') {
+                    $table->dropForeign('doacoes_aprovado_por_foreign');
+                }
+            }
+
+            $columnsToDrop = [
+                'entregue',
                 'data_entrega',
+                'data_aprovacao',
+                'data_rejeicao',
                 'motivo_rejeicao',
                 'adicionado_estoque',
                 'data_entrada_estoque',
                 'aprovado_por'
-            ]);
+            ];
+
+            foreach ($columnsToDrop as $column) {
+                if (Schema::hasColumn('doacoes', $column)) {
+                    $table->dropColumn($column);
+                }
+            }
         });
     }
 };

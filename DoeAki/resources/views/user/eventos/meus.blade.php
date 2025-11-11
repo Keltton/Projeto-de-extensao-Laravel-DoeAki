@@ -77,15 +77,15 @@
                         <div class="col-md-6 col-lg-4 mb-4">
                             <div class="card shadow-sm h-100">
                                 @if($evento->imagem)
-                                    <img src="{{ asset('storage/' . $evento->imagem) }}" 
-                                         class="card-img-top" alt="{{ $evento->titulo }}" style="height: 200px; object-fit: cover;">
+                                    <img src="{{ asset($evento->imagem) }}" 
+                                         class="card-img-top" alt="{{ $evento->nome }}" style="height: 200px; object-fit: cover;">
                                 @else
                                     <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center" style="height: 200px;">
                                         <i class="fas fa-calendar-alt fa-3x text-white"></i>
                                     </div>
                                 @endif
                                 <div class="card-body">
-                                    <h5 class="card-title fw-bold text-primary">{{ $evento->titulo }}</h5>
+                                    <h5 class="card-title fw-bold text-primary">{{ $evento->nome }}</h5>
                                     <p class="card-text text-muted small mb-2">
                                         <i class="far fa-calendar me-1"></i>
                                         {{ $evento->data_evento->format('d/m/Y H:i') }}

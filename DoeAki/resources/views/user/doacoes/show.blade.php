@@ -236,12 +236,15 @@
                                     Em caso de dúvidas sobre sua doação, entre em contato conosco.
                                 </p>
                                 <div class="d-grid gap-2">
-                                    <a href="mailto:felipepestanadev@gmail.com" class="btn btn-outline-primary btn-sm">
+                                    <a href="https://mail.google.com/mail/?view=cm&fs=1&to=felipepestanadev@gmail.com"
+                                        target="_blank" class="btn btn-outline-primary btn-sm">
                                         <i class="fas fa-envelope me-1"></i> Enviar Email
                                     </a>
-                                    <a href="tel:+5511999999999" class="btn btn-outline-success btn-sm">
-                                        <i class="fas fa-phone me-1"></i> Ligar
+                                    <a href="https://api.whatsapp.com/send?phone=5544984373240&text=Olá!%20Gostaria%20de%20saber%20mais..."
+                                        target="_blank" class="btn btn-outline-success btn-sm">
+                                        <i class="fab fa-whatsapp me-1"></i> WhatsApp
                                     </a>
+
                                 </div>
                             </div>
                         </div>

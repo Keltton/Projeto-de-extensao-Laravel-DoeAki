@@ -7,6 +7,7 @@ use App\Models\Inscricao;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class EventoController extends Controller
@@ -51,24 +52,24 @@ class EventoController extends Controller
         if (Auth::check()) {
             $userInscrito = Auth::user()->inscricoes()
                 ->where('evento_id', $id)
+                ->where('status', 'confirmada')
                 ->exists();
         }
 
-        // Tente uma view alternativa
+        // Verifica se a view existe
         if (view()->exists('eventos.show')) {
             return view('eventos.show', compact('evento', 'userInscrito'));
         } else {
-            // View simples como fallback
+            // Fallback simples
             return response("
             <h1>{$evento->nome}</h1>
             <p>{$evento->descricao}</p>
             <p>Data: {$evento->data_evento->format('d/m/Y H:i')}</p>
             <p>Local: {$evento->local}</p>
-            <a href='/eventos'>Voltar</a>
+            <a href='" . route('eventos.index') . "'>← Voltar para Eventos</a>
         ");
         }
     }
-
     /**
      * Meus eventos inscritos (usuário logado)
      */
@@ -231,9 +232,6 @@ class EventoController extends Controller
      */
     public function store(Request $request)
     {
-        // Debug: verificar dados recebidos
-        \Log::info('Dados do formulário:', $request->all());
-
         $request->validate([
             'nome' => 'required|string|max:255',
             'descricao' => 'nullable|string',
@@ -252,39 +250,37 @@ class EventoController extends Controller
             $dados = $request->all();
             $dados['user_id'] = auth()->id();
 
-            // Definir status padrão se não informado
+            // Definir status padrão
             if (!$request->has('status') || !$request->status) {
                 $dados['status'] = 'ativo';
             }
 
-            // Se não informar vagas_disponiveis, usa o mesmo valor de vagas_total
+            // Definir vagas disponíveis
             if ($request->vagas_total && !$request->has('vagas_disponiveis')) {
                 $dados['vagas_disponiveis'] = $request->vagas_total;
             }
 
-            // Upload da imagem
+            // Upload da imagem - SALVAR NA PASTA PUBLIC
             if ($request->hasFile('imagem')) {
-                $dados['imagem'] = $request->file('imagem')->store('eventos', 'public');
+                $imagem = $request->file('imagem');
+                $nomeImagem = 'evento_' . time() . '.' . $imagem->getClientOriginalExtension();
+
+                // Salvar na pasta public/images/eventos
+                $imagem->move(public_path('images/eventos'), $nomeImagem);
+                $dados['imagem'] = 'images/eventos/' . $nomeImagem;
             }
 
-            \Log::info('Dados para criar evento:', $dados);
-
             $evento = Evento::create($dados);
-
-            \Log::info('Evento criado com ID: ' . $evento->id);
 
             return redirect()->route('admin.eventos.index')
                 ->with('success', 'Evento criado com sucesso!');
 
         } catch (\Exception $e) {
             \Log::error('Erro ao criar evento: ' . $e->getMessage());
-            \Log::error('Trace: ' . $e->getTraceAsString());
-
             return back()->with('error', 'Erro ao criar evento: ' . $e->getMessage())
                 ->withInput();
         }
     }
-
     /**
      * Show the form for editing the specified resource (Admin)
      */
@@ -321,19 +317,25 @@ class EventoController extends Controller
 
             // Remover imagem se solicitado
             if ($request->has('remover_imagem')) {
-                if ($evento->imagem) {
-                    Storage::disk('public')->delete($evento->imagem);
+                if ($evento->imagem && file_exists(public_path($evento->imagem))) {
+                    unlink(public_path($evento->imagem));
                 }
                 $dados['imagem'] = null;
             }
 
-            // Upload da nova imagem
+            // Upload da nova imagem - SALVAR NA PASTA PUBLIC
             if ($request->hasFile('imagem')) {
                 // Remove imagem antiga
-                if ($evento->imagem) {
-                    Storage::disk('public')->delete($evento->imagem);
+                if ($evento->imagem && file_exists(public_path($evento->imagem))) {
+                    unlink(public_path($evento->imagem));
                 }
-                $dados['imagem'] = $request->file('imagem')->store('eventos', 'public');
+
+                $imagem = $request->file('imagem');
+                $nomeImagem = 'evento_' . time() . '.' . $imagem->getClientOriginalExtension();
+
+                // Salvar na pasta public/images/eventos
+                $imagem->move(public_path('images/eventos'), $nomeImagem);
+                $dados['imagem'] = 'images/eventos/' . $nomeImagem;
             }
 
             // Atualizar vagas_disponiveis se vagas_total foi alterado
@@ -341,7 +343,6 @@ class EventoController extends Controller
                 $diferenca = $request->vagas_total - $evento->vagas_total;
                 $dados['vagas_disponiveis'] = $evento->vagas_disponiveis + $diferenca;
 
-                // Garantir que vagas_disponiveis não seja negativo
                 if ($dados['vagas_disponiveis'] < 0) {
                     $dados['vagas_disponiveis'] = 0;
                 }
@@ -358,7 +359,6 @@ class EventoController extends Controller
                 ->withInput();
         }
     }
-
     /**
      * Remove the specified resource from storage (Admin)
      */
@@ -370,9 +370,9 @@ class EventoController extends Controller
             // Remove todas as inscrições relacionadas
             $evento->inscricoes()->delete();
 
-            // Remove imagem
-            if ($evento->imagem) {
-                Storage::disk('public')->delete($evento->imagem);
+            // Remove imagem da pasta public
+            if ($evento->imagem && file_exists(public_path($evento->imagem))) {
+                unlink(public_path($evento->imagem));
             }
 
             $evento->delete();
@@ -422,40 +422,64 @@ class EventoController extends Controller
         return view('admin.eventos.inscricoes', compact('evento', 'inscricoes'));
     }
 
-    /**
-     * Exportar inscrições para CSV (Admin)
-     */
+
     public function exportarInscricoes($id)
     {
-        $evento = Evento::findOrFail($id);
-        $inscricoes = $evento->inscricoes()
-            ->with('user')
-            ->get();
+        try {
+            $evento = Evento::findOrFail($id);
+            $inscricoes = $evento->inscricoes()->with('user')->get();
 
-        $fileName = 'inscricoes_' . $evento->nome . '_' . date('Y-m-d') . '.csv';
+            // Nome do arquivo seguro (sem caracteres especiais)
+            $fileName = 'inscricoes_' . Str::slug($evento->nome) . '_' . date('Y-m-d') . '.csv';
 
-        $headers = [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
-        ];
+            $headers = [
+                'Content-Type' => 'text/csv; charset=utf-8',
+                'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+            ];
 
-        $callback = function () use ($inscricoes) {
-            $file = fopen('php://output', 'w');
-            fputcsv($file, ['Nome', 'Email', 'Data Inscrição', 'Status']);
+            $callback = function () use ($inscricoes) {
+                // Criar arquivo de output
+                $file = fopen('php://output', 'w');
 
-            foreach ($inscricoes as $inscricao) {
+                // Adicionar BOM para UTF-8 (resolve problemas com acentos no Excel)
+                fwrite($file, "\xEF\xBB\xBF");
+
+                // Cabeçalho do CSV
                 fputcsv($file, [
-                    $inscricao->user->name,
-                    $inscricao->user->email,
-                    $inscricao->data_inscricao->format('d/m/Y H:i'),
-                    $inscricao->status
-                ]);
-            }
+                    'Nome',
+                    'Email',
+                    'Telefone',
+                    'CPF',
+                    'Cidade',
+                    'Estado',
+                    'Data de Inscrição',
+                    'Status'
+                ], ';'); // Usar ponto e vírgula como separador (melhor para Excel)
 
-            fclose($file);
-        };
+                // Dados
+                foreach ($inscricoes as $inscricao) {
+                    fputcsv($file, [
+                        $inscricao->user->name,
+                        $inscricao->user->email,
+                        $inscricao->user->telefone ?? 'Não informado',
+                        $inscricao->user->cpf ?? 'Não informado',
+                        $inscricao->user->cidade ?? 'Não informado',
+                        $inscricao->user->estado ?? 'Não informado',
+                        $inscricao->created_at->format('d/m/Y H:i'),
+                        'Inscrito'
+                    ], ';');
+                }
 
-        return response()->stream($callback, 200, $headers);
+                fclose($file);
+            };
+
+            return response()->stream($callback, 200, $headers);
+
+        } catch (\Exception $e) {
+            \Log::error('Erro ao exportar inscrições: ' . $e->getMessage());
+            return redirect()->back()
+                ->with('error', 'Erro ao exportar inscrições: ' . $e->getMessage());
+        }
     }
 
     /**

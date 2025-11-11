@@ -263,15 +263,15 @@
                                         <div class="col-md-6 col-lg-4 mb-4">
                                             <div class="card h-100 shadow-sm">
                                                 @if($evento->imagem)
-                                                    <img src="{{ asset('storage/' . $evento->imagem) }}" 
-                                                         class="card-img-top" alt="{{ $evento->titulo }}" style="height: 150px; object-fit: cover;">
+                                                    <img src="{{ asset($evento->imagem) }}" 
+                                                         class="card-img-top" alt="{{ $evento->nome }}" style="height: 150px; object-fit: cover;">
                                                 @else
                                                     <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center" style="height: 150px;">
                                                         <i class="fas fa-calendar-alt fa-3x text-white"></i>
                                                     </div>
                                                 @endif
                                                 <div class="card-body">
-                                                    <h6 class="card-title text-primary">{{ $evento->titulo }}</h6>
+                                                    <h6 class="card-title text-primary">{{ $evento->nome }}</h6>
                                                     <p class="card-text small text-muted mb-2">
                                                         <i class="fas fa-calendar me-1"></i>
                                                         {{ $evento->data_evento->format('d/m/Y H:i') }}

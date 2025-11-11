@@ -14,50 +14,65 @@ use Illuminate\Support\Facades\DB;
 
 class AdminController extends Controller
 {
+    /**
+     * Dashboard administrativo
+     */
     public function dashboard()
     {
-        // Estatísticas principais
-        $stats = [
-            'totalUsers' => User::count(),
-            'totalItens' => $this->getItensCount(),
-            'totalCategorias' => Categoria::count(),
-            'totalEventos' => Evento::count(),
-            'eventosRecentes' => Evento::with('user')->latest()->take(5)->get(),
-        ];
+        try {
+            // Estatísticas principais
+            $data = [
+                'totalUsers' => User::count(),
+                'totalItens' => $this->getItensCount(),
+                'totalCategorias' => Categoria::count(),
+                'totalEventos' => Evento::count(),
+                'eventosRecentes' => Evento::with('user')->latest()->take(5)->get(),
 
-        // Estatísticas de doações
-        $statsDoacoes = [
-            'totalDoacoes' => $this->getDoacoesCount(),
-            'doacoesPendentes' => Doacao::where('status', 'pendente')->count(),
-            'doacoesAceitas' => Doacao::where('status', 'aceita')->count(),
-            'doacoesRejeitadas' => Doacao::where('status', 'rejeitada')->count(),
-            'doacoesEntregues' => Doacao::where('status', 'entregue')->count(),
-        ];
+                // Estatísticas de doações
+                'totalDoacoes' => $this->getDoacoesCount(),
+                'doacoesPendentes' => Doacao::where('status', 'pendente')->count(),
+                'doacoesAceitas' => Doacao::where('status', 'aceita')->count(),
+                'doacoesRejeitadas' => Doacao::whereIn('status', ['rejeitada', 'rejeitado'])->count(),
+                'doacoesEntregues' => Doacao::where('status', 'entregue')->count(),
 
-        // Estatísticas de estoque - com verificação segura
-        $statsEstoque = [
-            'estoqueTotal' => Doacao::where('status', 'aceita')->sum('quantidade'),
-            'itensUnicos' => Doacao::where('status', 'aceita')
-                ->distinct()
-                ->count('item_id'),
-            'aprovadasHoje' => $this->getAprovadasHojeCount(), // Método seguro
-        ];
+                // Estatísticas de estoque
+                'estoqueTotal' => Doacao::whereIn('status', ['aceita', 'aprovado'])->sum('quantidade'),
+                'itensUnicos' => Doacao::whereIn('status', ['aceita', 'aprovado'])
+                    ->distinct()
+                    ->count('item_id'),
+                'aprovadasHoje' => $this->getAprovadasHojeCount(),
 
-        // Doações recentes para aprovação
-        $doacoesRecentes = Doacao::with(['user', 'item.categoria'])
-            ->where('status', 'pendente')
-            ->latest()
-            ->take(5)
-            ->get();
+                // Doações recentes para aprovação
+                'doacoesRecentes' => Doacao::with(['user', 'item.categoria'])
+                    ->where('status', 'pendente')
+                    ->latest()
+                    ->take(5)
+                    ->get()
+            ];
 
-        return view('admin.dashboard', array_merge(
-            $stats,
-            $statsDoacoes,
-            $statsEstoque,
-            [
-                'doacoesRecentes' => $doacoesRecentes
-            ]
-        ));
+            return view('admin.dashboard', $data);
+
+        } catch (\Exception $e) {
+            \Log::error('Erro no dashboard admin: ' . $e->getMessage());
+
+            // Retorna dados básicos em caso de erro
+            return view('admin.dashboard', [
+                'totalUsers' => 0,
+                'totalItens' => 0,
+                'totalCategorias' => 0,
+                'totalEventos' => 0,
+                'totalDoacoes' => 0,
+                'doacoesPendentes' => 0,
+                'doacoesAceitas' => 0,
+                'doacoesRejeitadas' => 0,
+                'doacoesEntregues' => 0,
+                'estoqueTotal' => 0,
+                'itensUnicos' => 0,
+                'aprovadasHoje' => 0,
+                'doacoesRecentes' => collect(),
+                'eventosRecentes' => collect()
+            ])->with('error', 'Erro ao carregar dashboard: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -66,13 +81,14 @@ class AdminController extends Controller
     private function getAprovadasHojeCount()
     {
         try {
-            // Verifica se a coluna existe antes de usar
             if (Schema::hasColumn('doacoes', 'data_aprovacao')) {
                 return Doacao::where('status', 'aceita')
                     ->whereDate('data_aprovacao', today())
                     ->count();
             }
-            return 0;
+            return Doacao::whereIn('status', ['aceita', 'aprovado'])
+                ->whereDate('created_at', today())
+                ->count();
         } catch (\Exception $e) {
             return 0;
         }
@@ -83,14 +99,11 @@ class AdminController extends Controller
      */
     private function getItensCount()
     {
-        if (Schema::hasTable('itens')) {
-            try {
-                return DB::table('itens')->count();
-            } catch (\Exception $e) {
-                return 0;
-            }
+        try {
+            return Item::count();
+        } catch (\Exception $e) {
+            return 0;
         }
-        return 0;
     }
 
     /**
@@ -98,14 +111,11 @@ class AdminController extends Controller
      */
     private function getDoacoesCount()
     {
-        if (Schema::hasTable('doacoes')) {
-            try {
-                return DB::table('doacoes')->count();
-            } catch (\Exception $e) {
-                return 0;
-            }
+        try {
+            return Doacao::count();
+        } catch (\Exception $e) {
+            return 0;
         }
-        return 0;
     }
 
     /**
@@ -115,26 +125,59 @@ class AdminController extends Controller
      */
 
     /**
-     * Listagem de usuários
+     * Listagem de usuários (compatibilidade com rotas)
      */
     public function index()
     {
-        $users = User::where('role', 'user')->latest()->get();
-        return view('admin.users.index', compact('users'));
+        return $this->gerenciarUsuarios();
+    }
+
+    /**
+     * Gerenciar usuários (lista completa)
+     */
+    public function gerenciarUsuarios()
+    {
+        $users = User::orderBy('created_at', 'desc')->paginate(15);
+
+        $estatisticas = [
+            'total' => User::count(),
+            'admins' => User::where('role', 'admin')->count(),
+            'users' => User::where('role', 'user')->count(),
+            'cadastro_completo' => User::where('cadastro_completo', true)->count(),
+            'novos_este_mes' => User::whereMonth('created_at', now()->month)->count(),
+        ];
+
+        return view('admin.users.index', compact('users', 'estatisticas'));
+    }
+
+    /**
+     * Formulário de criação de usuário (compatibilidade)
+     */
+    public function create()
+    {
+        return $this->criarUsuario();
     }
 
     /**
      * Formulário de criação de usuário
      */
-    public function create()
+    public function criarUsuario()
     {
         return view('admin.users.create');
     }
 
     /**
-     * Armazena novo usuário
+     * Armazena novo usuário (compatibilidade)
      */
     public function store(Request $request)
+    {
+        return $this->salvarUsuario($request);
+    }
+
+    /**
+     * Salvar novo usuário
+     */
+    public function salvarUsuario(Request $request)
     {
         $request->validate([
             'name' => 'required|string|max:255',
@@ -142,6 +185,7 @@ class AdminController extends Controller
             'password' => 'required|min:6|confirmed',
             'telefone' => 'nullable|string|max:20',
             'cpf' => 'nullable|string|max:14',
+            'role' => 'required|in:admin,user',
         ]);
 
         try {
@@ -151,8 +195,9 @@ class AdminController extends Controller
                 'password' => Hash::make($request->password),
                 'telefone' => $request->telefone,
                 'cpf' => $request->cpf,
-                'role' => 'user',
-                'cadastro_completo' => !empty($request->telefone) && !empty($request->cpf)
+                'role' => $request->role,
+                'cadastro_completo' => !empty($request->telefone) && !empty($request->cpf),
+                'email_verified_at' => now()
             ]);
 
             return redirect()->route('admin.users.index')
@@ -166,91 +211,130 @@ class AdminController extends Controller
     }
 
     /**
-     * Formulário de edição de usuário
+     * Formulário de edição de usuário (compatibilidade)
      */
     public function edit(User $user)
     {
-        return view('admin.users.edit', compact('user'));
+        return $this->editarUsuario($user->id);
     }
 
     /**
-     * Atualiza usuário
+     * Exibir formulário de edição de usuário
+     */
+    public function editarUsuario($id)
+    {
+        try {
+            $user = User::findOrFail($id);
+            return view('admin.users.edit', compact('user'));
+        } catch (\Exception $e) {
+            return redirect()->route('admin.users.index')
+                ->with('error', 'Usuário não encontrado: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Atualiza usuário (compatibilidade)
      */
     public function update(Request $request, User $user)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $user->id,
-            'telefone' => 'nullable|string|max:20',
-            'cpf' => 'nullable|string|max:14',
-            'role' => 'required|in:admin,user',
-            'cadastro_completo' => 'boolean'
-        ]);
+        return $this->atualizarUsuario($request, $user->id);
+    }
 
+    /**
+     * Atualizar usuário
+     */
+    public function atualizarUsuario(Request $request, $id)
+    {
         try {
-            $user->update([
-                'name' => $request->name,
-                'email' => $request->email,
-                'telefone' => $request->telefone,
-                'cpf' => $request->cpf,
-                'role' => $request->role,
-                'cadastro_completo' => $request->has('cadastro_completo')
+            $user = User::findOrFail($id);
+
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'email' => 'required|email|unique:users,email,' . $user->id,
+                'telefone' => 'nullable|string|max:20',
+                'cpf' => 'nullable|string|max:14|unique:users,cpf,' . $user->id,
+                'endereco' => 'nullable|string|max:255',
+                'cidade' => 'nullable|string|max:100',
+                'estado' => 'nullable|string|max:2',
+                'cep' => 'nullable|string|max:9',
+                'sobre' => 'nullable|string',
+                'role' => 'required|in:user,admin',
+                'cadastro_completo' => 'boolean',
             ]);
+
+            $user->update($validated);
 
             return redirect()->route('admin.users.index')
                 ->with('success', 'Usuário atualizado com sucesso!');
 
         } catch (\Exception $e) {
-            return redirect()->route('admin.users.edit', $user)
+            return redirect()->back()
                 ->with('error', 'Erro ao atualizar usuário: ' . $e->getMessage())
                 ->withInput();
         }
     }
 
     /**
-     * Deleta usuário
+     * Deleta usuário (compatibilidade)
      */
     public function destroy(User $user)
     {
-        if (auth()->id() === $user->id) {
-            return back()->with('error', 'Você não pode deletar sua própria conta!');
-        }
+        return $this->excluirUsuario($user->id);
+    }
 
+    /**
+     * Excluir usuário
+     */
+    public function excluirUsuario($id)
+    {
         try {
+            $user = User::findOrFail($id);
+
+            // Impedir que o admin exclua a si mesmo
+            if ($user->id === auth()->id()) {
+                return redirect()->back()
+                    ->with('error', 'Você não pode excluir sua própria conta!');
+            }
+
             $user->delete();
+
             return redirect()->route('admin.users.index')
-                ->with('success', 'Usuário deletado com sucesso!');
+                ->with('success', 'Usuário excluído com sucesso!');
 
         } catch (\Exception $e) {
-            return redirect()->route('admin.users.index')
-                ->with('error', 'Erro ao deletar usuário: ' . $e->getMessage());
+            return redirect()->back()
+                ->with('error', 'Erro ao excluir usuário: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Resetar senha do usuário (compatibilidade)
+     */
+    public function resetPassword(Request $request, User $user)
+    {
+        return $this->resetarSenha($user->id);
     }
 
     /**
      * Resetar senha do usuário
      */
-    public function resetPassword(Request $request, User $user)
+    public function resetarSenha($id)
     {
-        if (auth()->id() === $user->id) {
-            return back()->with('error', 'Você não pode redefinir sua própria senha aqui.');
-        }
-
-        $request->validate([
-            'new_password' => 'required|min:6|confirmed'
-        ]);
-
         try {
+            $user = User::findOrFail($id);
+
+            // Gerar uma senha temporária
+            $tempPassword = '12345678';
             $user->update([
-                'password' => Hash::make($request->new_password)
+                'password' => Hash::make($tempPassword)
             ]);
 
-            return redirect()->route('admin.users.edit', $user)
-                ->with('success', 'Senha redefinida com sucesso!');
+            return redirect()->back()
+                ->with('success', 'Senha resetada com sucesso! Nova senha: ' . $tempPassword);
 
         } catch (\Exception $e) {
-            return redirect()->route('admin.users.edit', $user)
-                ->with('error', 'Erro ao redefinir senha: ' . $e->getMessage());
+            return redirect()->back()
+                ->with('error', 'Erro ao resetar senha: ' . $e->getMessage());
         }
     }
 
@@ -272,12 +356,12 @@ class AdminController extends Controller
         $estatisticas = [
             'pendentes' => Doacao::where('status', 'pendente')->count(),
             'aceitas' => Doacao::where('status', 'aceita')->count(),
-            'rejeitadas' => Doacao::where('status', 'rejeitada')->count(),
+            'rejeitadas' => Doacao::whereIn('status', ['rejeitada', 'rejeitado'])->count(),
             'entregues' => Doacao::where('status', 'entregue')->count(),
             'total' => Doacao::count()
         ];
 
-        return view('admin.doacoes.index', compact('doacoes', 'estatisticas'));
+        return view('admin.doacoes.gerenciar', compact('doacoes', 'estatisticas'));
     }
 
     /**
@@ -286,28 +370,19 @@ class AdminController extends Controller
     public function aprovarDoacao($id)
     {
         try {
-            $doacao = Doacao::with(['item'])->findOrFail($id);
+            $doacao = Doacao::findOrFail($id);
 
-            // Verificar se o item existe e contar quantidades recebidas
-            $quantidadeRecebida = 0;
-            if ($doacao->item) {
-                $quantidadeRecebida = Doacao::where('item_id', $doacao->item_id)
-                    ->where('status', 'aceita')
-                    ->sum('quantidade');
+            // Usa o método do model
+            if ($doacao->aprovar(auth()->id())) {
+                return redirect()->back()
+                    ->with('success', 'Doação aprovada com sucesso!');
             }
 
-            $doacao->update([
-                'status' => 'aceita',
-                'data_aprovacao' => now()
-            ]);
-
-            $novaQuantidade = $quantidadeRecebida + $doacao->quantidade;
-
-            return redirect()->route('admin.doacoes.gerenciar')
-                ->with('success', "Doação aprovada com sucesso! Total de {$novaQuantidade} unidades recebidas deste item.");
+            return redirect()->back()
+                ->with('error', 'Erro ao aprovar doação.');
 
         } catch (\Exception $e) {
-            return redirect()->route('admin.doacoes.gerenciar')
+            return redirect()->back()
                 ->with('error', 'Erro ao aprovar doação: ' . $e->getMessage());
         }
     }
@@ -317,49 +392,55 @@ class AdminController extends Controller
      */
     public function rejeitarDoacao(Request $request, $id)
     {
-        $request->validate([
-            'motivo_rejeicao' => 'required|string|max:500'
-        ]);
-
         try {
             $doacao = Doacao::findOrFail($id);
 
-            $doacao->update([
-                'status' => 'rejeitada',
-                'motivo_rejeicao' => $request->motivo_rejeicao,
-                'data_rejeicao' => now()
-            ]);
+            // Usa o método do model
+            if ($doacao->rejeitar($request->motivo_rejeicao)) {
+                return redirect()->back()
+                    ->with('success', 'Doação rejeitada com sucesso!');
+            }
 
-            return redirect()->route('admin.doacoes.gerenciar')
-                ->with('success', 'Doação rejeitada com sucesso.');
+            return redirect()->back()
+                ->with('error', 'Erro ao rejeitar doação.');
 
         } catch (\Exception $e) {
-            return redirect()->route('admin.doacoes.gerenciar')
+            return redirect()->back()
                 ->with('error', 'Erro ao rejeitar doação: ' . $e->getMessage());
         }
     }
 
     /**
-     * Marcar como entregue
+     * Marcar doação como entregue
      */
     public function marcarEntregue($id)
     {
         try {
             $doacao = Doacao::findOrFail($id);
 
-            $doacao->update([
-                'status' => 'aceita', // Use 'aceita' temporariamente
-                'data_entrega' => now(),
-                'adicionado_estoque' => false // Marcar que saiu do estoque
-            ]);
+            // Usa o método do model
+            if ($doacao->marcarEntregue()) {
+                return redirect()->back()
+                    ->with('success', 'Doação marcada como entregue com sucesso!');
+            }
 
-            return redirect()->route('admin.doacoes.gerenciar')
-                ->with('success', 'Doação marcada como entregue.');
+            return redirect()->back()
+                ->with('error', 'Erro ao marcar doação como entregue.');
 
         } catch (\Exception $e) {
-            return redirect()->route('admin.doacoes.gerenciar')
-                ->with('error', 'Erro ao marcar como entregue: ' . $e->getMessage());
+            \Log::error('Erro ao marcar doação como entregue: ' . $e->getMessage());
+            return redirect()->back()
+                ->with('error', 'Erro ao marcar doação como entregue: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Detalhes de uma doação específica (admin)
+     */
+    public function showDoacao($id)
+    {
+        $doacao = Doacao::with(['user', 'item.categoria'])->findOrFail($id);
+        return view('admin.doacoes.show', compact('doacao'));
     }
 
     /**
@@ -370,12 +451,12 @@ class AdminController extends Controller
         $itens = Item::with(['categoria'])
             ->withCount([
                 'doacoes as total_doacoes' => function ($query) {
-                    $query->where('status', 'aceita');
+                    $query->whereIn('status', ['aceita', 'aprovado']);
                 }
             ])
             ->withSum([
                 'doacoes as total_quantidade' => function ($query) {
-                    $query->where('status', 'aceita');
+                    $query->whereIn('status', ['aceita', 'aprovado']);
                 }
             ], 'quantidade')
             ->orderBy('total_quantidade', 'desc')
@@ -392,15 +473,24 @@ class AdminController extends Controller
     }
 
     /**
-     * Detalhes de uma doação específica (admin)
+     * Relatório de doações
      */
-    public function showDoacao($id)
+    public function relatorioDoacoes()
     {
-        $doacao = Doacao::with(['user', 'item.categoria'])->findOrFail($id);
-        return view('admin.doacoes.show', compact('doacao'));
+        $doacoes = Doacao::with(['user', 'item.categoria'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
+
+        $estatisticas = [
+            'total' => Doacao::count(),
+            'pendentes' => Doacao::where('status', 'pendente')->count(),
+            'aceitas' => Doacao::whereIn('status', ['aceita', 'aprovado'])->count(),
+            'rejeitadas' => Doacao::whereIn('status', ['rejeitada', 'rejeitado'])->count(),
+            'entregues' => Doacao::where('status', 'entregue')->count(),
+        ];
+
+        return view('admin.relatorios.doacoes', compact('doacoes', 'estatisticas'));
     }
-
-
 
     /**
      * =============================================
@@ -422,7 +512,7 @@ class AdminController extends Controller
             // Doações
             'total_doacoes' => Doacao::count(),
             'doacoes_pendentes' => Doacao::where('status', 'pendente')->count(),
-            'doacoes_aceitas' => Doacao::where('status', 'aceita')->count(),
+            'doacoes_aceitas' => Doacao::whereIn('status', ['aceita', 'aprovado'])->count(),
             'doacoes_entregues' => Doacao::where('status', 'entregue')->count(),
 
             // Eventos
@@ -434,7 +524,7 @@ class AdminController extends Controller
             'itens_mais_doados' => Item::with(['categoria'])
                 ->withSum([
                     'doacoes as total_recebido' => function ($query) {
-                        $query->where('status', 'aceita');
+                        $query->whereIn('status', ['aceita', 'aprovado']);
                     }
                 ], 'quantidade')
                 ->orderBy('total_recebido', 'desc')

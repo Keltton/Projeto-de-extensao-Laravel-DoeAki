@@ -82,13 +82,13 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     // 📌 Gestão de Usuários
     Route::prefix('users')->name('users.')->group(function () {
-        Route::get('/', [AdminController::class, 'index'])->name('index');
-        Route::get('/create', [AdminController::class, 'create'])->name('create');
-        Route::post('/', [AdminController::class, 'store'])->name('store');
-        Route::get('/{user}/edit', [AdminController::class, 'edit'])->name('edit');
-        Route::put('/{user}', [AdminController::class, 'update'])->name('update');
-        Route::delete('/{user}', [AdminController::class, 'destroy'])->name('destroy');
-        Route::post('/{user}/reset-password', [AdminController::class, 'resetPassword'])->name('reset-password');
+        Route::get('/', [AdminController::class, 'gerenciarUsuarios'])->name('index');
+        Route::get('/create', [AdminController::class, 'criarUsuario'])->name('create');
+        Route::post('/', [AdminController::class, 'salvarUsuario'])->name('store');
+        Route::get('/{user}/edit', [AdminController::class, 'editarUsuario'])->name('edit');
+        Route::put('/{user}', [AdminController::class, 'atualizarUsuario'])->name('update');
+        Route::delete('/{user}', [AdminController::class, 'excluirUsuario'])->name('destroy');
+        Route::post('/{user}/reset-password', [AdminController::class, 'resetarSenha'])->name('reset-password');
     });
 
     // 📌 Gestão de Itens
@@ -131,18 +131,19 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::post('/{id}/aprovar', [AdminController::class, 'aprovarDoacao'])->name('aprovar');
         Route::post('/{id}/rejeitar', [AdminController::class, 'rejeitarDoacao'])->name('rejeitar');
         Route::post('/{id}/entregue', [AdminController::class, 'marcarEntregue'])->name('entregue');
-        Route::get('/relatorio', [AdminController::class, 'relatorioItens'])->name('relatorio');
+        Route::get('/relatorio', [AdminController::class, 'relatorioDoacoes'])->name('relatorio');
         Route::get('/{id}', [AdminController::class, 'showDoacao'])->name('show');
     });
 
-    // 📌 Relatórios
+    // 📌 Relatórios (Sistema Centralizado)
     Route::prefix('relatorios')->name('relatorios.')->group(function () {
         Route::get('/', [RelatorioController::class, 'index'])->name('index');
-        Route::get('/dados', [RelatorioController::class, 'dashboardData'])->name('dados');
-        Route::get('/geral', [AdminController::class, 'relatorioGeral'])->name('geral');
-        Route::get('/doacoes', [RelatorioController::class, 'relatorioDoacoes'])->name('doacoes');
-        Route::get('/usuarios', [RelatorioController::class, 'relatorioUsuarios'])->name('usuarios');
-        Route::get('/itens', [AdminController::class, 'relatorioItens'])->name('itens');
+        Route::get('/dashboard', [RelatorioController::class, 'dashboard'])->name('dashboard');
+        Route::get('/doacoes', [RelatorioController::class, 'doacoes'])->name('doacoes');
+        Route::get('/usuarios', [RelatorioController::class, 'usuarios'])->name('usuarios');
+        Route::get('/itens', [RelatorioController::class, 'itens'])->name('itens');
+        Route::get('/eventos', [RelatorioController::class, 'eventos'])->name('eventos');
+        Route::get('/exportar/{tipo}', [RelatorioController::class, 'exportar'])->name('exportar');
     });
 
     // 📌 Calendário de Eventos

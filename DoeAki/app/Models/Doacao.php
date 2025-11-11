@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Schema;
 
 class Doacao extends Model
 {
@@ -25,7 +26,8 @@ class Doacao extends Model
         'data_entrada_estoque',
         'motivo_rejeicao',
         'adicionado_estoque',
-        'aprovado_por'
+        'aprovado_por',
+        'entregue' // ADICIONADO
     ];
 
     protected $casts = [
@@ -35,7 +37,8 @@ class Doacao extends Model
         'data_entrega' => 'datetime',
         'data_entrada_estoque' => 'datetime',
         'quantidade' => 'integer',
-        'adicionado_estoque' => 'boolean'
+        'adicionado_estoque' => 'boolean',
+        'entregue' => 'boolean' // ADICIONADO
     ];
 
     // Definição das condições possíveis
@@ -50,8 +53,10 @@ class Doacao extends Model
     const STATUS = [
         'pendente' => 'Pendente',
         'aceita' => 'Aceita',
+        'aprovado' => 'Aprovado', // ADICIONADO para compatibilidade
         'rejeitada' => 'Rejeitada',
-        'entregue' => 'Entregue' // NOVO STATUS
+        'rejeitado' => 'Rejeitado', // ADICIONADO para compatibilidade
+        'entregue' => 'Entregue'
     ];
 
     public function user()
@@ -84,7 +89,7 @@ class Doacao extends Model
     {
         $colors = [
             'novo' => 'success',
-            'seminovo' => 'info', 
+            'seminovo' => 'info',
             'usado' => 'warning',
             'precisa_reparo' => 'danger'
         ];
@@ -95,24 +100,69 @@ class Doacao extends Model
     /**
      * Acessor para obter a label do status
      */
+    // Acessor para obter a label do status
     public function getStatusLabelAttribute()
     {
-        return self::STATUS[$this->status] ?? $this->status;
+        return match ($this->status) {
+            'pendente' => 'Pendente',
+            'aceita' => 'Aceita',
+            'rejeitada' => 'Rejeitada',
+            'entregue' => 'Entregue',
+            default => ucfirst($this->status)
+        };
     }
 
-    /**
-     * Acessor para obter a cor do status
-     */
+    // Acessor para obter a cor do status
     public function getStatusColorAttribute()
     {
         $colors = [
             'pendente' => 'warning',
             'aceita' => 'success',
             'rejeitada' => 'danger',
-            'entregue' => 'info' // NOVA COR
+            'entregue' => 'info'
         ];
 
         return $colors[$this->status] ?? 'secondary';
+    }
+
+    /**
+     * Verifica se a doação pode ser marcada como entregue
+     */
+    public function getPodeSerEntregueAttribute()
+    {
+        return in_array($this->status, ['aceita', 'aprovado']) && $this->status !== 'entregue';
+    }
+
+    /**
+     * Verifica se a doação está pendente
+     */
+    public function getEstaPendenteAttribute()
+    {
+        return $this->status === 'pendente';
+    }
+
+    /**
+     * Verifica se a doação foi aprovada
+     */
+    public function getFoiAprovadaAttribute()
+    {
+        return in_array($this->status, ['aceita', 'aprovado']);
+    }
+
+    /**
+     * Verifica se a doação foi rejeitada
+     */
+    public function getFoiRejeitadaAttribute()
+    {
+        return in_array($this->status, ['rejeitada', 'rejeitado']);
+    }
+
+    /**
+     * Verifica se a doação foi entregue
+     */
+    public function getFoiEntregueAttribute()
+    {
+        return $this->status === 'entregue';
     }
 
     /**
@@ -128,7 +178,15 @@ class Doacao extends Model
      */
     public function scopeAprovadas($query)
     {
-        return $query->where('status', 'aceita');
+        return $query->whereIn('status', ['aceita', 'aprovado']);
+    }
+
+    /**
+     * Scope para doações rejeitadas
+     */
+    public function scopeRejeitadas($query)
+    {
+        return $query->whereIn('status', ['rejeitada', 'rejeitado']);
     }
 
     /**
@@ -148,30 +206,51 @@ class Doacao extends Model
     }
 
     /**
+     * Scope para doações que podem ser entregues
+     */
+    public function scopeParaEntrega($query)
+    {
+        return $query->whereIn('status', ['aceita', 'aprovado'])
+            ->where('status', '!=', 'entregue');
+    }
+
+    /**
      * Método para aprovar doação e adicionar ao estoque
      */
-    public function aprovar($aprovadorId)
+    public function aprovar($aprovadorId = null)
     {
-        return $this->update([
-            'status' => 'aceita',
+        $updateData = [
+            'status' => 'aceita', // Usar 'aceita' que é mais curto e compatível
             'adicionado_estoque' => true,
             'data_aprovacao' => now(),
             'data_entrada_estoque' => now(),
-            'aprovado_por' => $aprovadorId
-        ]);
+        ];
+
+        if ($aprovadorId) {
+            $updateData['aprovado_por'] = $aprovadorId;
+        } elseif (auth()->check()) {
+            $updateData['aprovado_por'] = auth()->id();
+        }
+
+        return $this->update($updateData);
     }
 
     /**
      * Método para rejeitar doação
      */
-    public function rejeitar($motivo)
+    public function rejeitar($motivo = null)
     {
-        return $this->update([
-            'status' => 'rejeitada',
-            'motivo_rejeicao' => $motivo,
+        $updateData = [
+            'status' => 'rejeitada', // Usar 'rejeitada' que é mais curto
             'data_rejeicao' => now(),
             'adicionado_estoque' => false
-        ]);
+        ];
+
+        if ($motivo) {
+            $updateData['motivo_rejeicao'] = $motivo;
+        }
+
+        return $this->update($updateData);
     }
 
     /**
@@ -179,9 +258,31 @@ class Doacao extends Model
      */
     public function marcarEntregue()
     {
-        return $this->update([
+        $updateData = [
             'status' => 'entregue',
             'data_entrega' => now()
-        ]);
+        ];
+
+        // Se a coluna entregue existe, atualiza também
+        if (Schema::hasColumn('doacoes', 'entregue')) {
+            $updateData['entregue'] = true;
+        }
+
+        return $this->update($updateData);
+    }
+
+    /**
+     * Boot do model
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Definir data_doacao automaticamente ao criar
+        static::creating(function ($doacao) {
+            if (empty($doacao->data_doacao)) {
+                $doacao->data_doacao = now();
+            }
+        });
     }
 }

@@ -37,13 +37,39 @@
                             <i class="bi bi-person-circle me-1"></i>{{ Auth::user()->name }}
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ route('user.dashboard') }}">Dashboard</a></li>
-                            <li><a class="dropdown-item" href="{{ route('user.perfil') }}">Meu Perfil</a></li>
+                            <li><a class="dropdown-item" href="{{ route('user.dashboard') }}">
+                                <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ route('user.perfil') }}">
+                                <i class="bi bi-person me-2"></i>Meu Perfil
+                            </a></li>
+                            
+                            <!-- Seção Eventos -->
+                            <li><hr class="dropdown-divider"></li>
+                            <li><h6 class="dropdown-header">Eventos</h6></li>
+                            <li><a class="dropdown-item" href="{{ route('user.eventos.meus') }}">
+                                <i class="bi bi-calendar-check me-2"></i>Meus Eventos
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ route('eventos.index') }}">
+                                <i class="bi bi-calendar-event me-2"></i>Explorar Eventos
+                            </a></li>
+                            
+                            <!-- Seção Doações -->
+                            @if(Route::has('user.doacoes.index'))
+                            <li><hr class="dropdown-divider"></li>
+                            <li><h6 class="dropdown-header">Doações</h6></li>
+                            <li><a class="dropdown-item" href="{{ route('user.doacoes.index') }}">
+                                <i class="bi bi-gift me-2"></i>Minhas Doações
+                            </a></li>
+                            @endif
+                            
                             <li><hr class="dropdown-divider"></li>
                             <li>
-                                <form method="POST" action="{{ route('logout') }}" class="d-inline">
+                                <form method="POST" action="{{ route('logout') }}" class="d-inline w-100">
                                     @csrf
-                                    <button type="submit" class="dropdown-item text-danger">Sair</button>
+                                    <button type="submit" class="dropdown-item text-danger">
+                                        <i class="bi bi-box-arrow-right me-2"></i>Sair
+                                    </button>
                                 </form>
                             </li>
                         </ul>
@@ -103,7 +129,7 @@
                             <div class="card h-100 evento-card">
                                 {{-- Imagem do evento --}}
                                 @if($evento->imagem)
-                                    <img src="{{ asset('storage/' . $evento->imagem) }}" class="card-img-top" alt="{{ $evento->titulo }}" style="height: 200px; object-fit: cover;">
+                                    <img src="{{ asset($evento->imagem) }}" class="card-img-top" alt="{{ $evento->nome }}" style="height: 200px; object-fit: cover;">
                                 @else
                                     <div class="bg-secondary text-white d-flex align-items-center justify-content-center" style="height: 200px;">
                                         <i class="bi bi-calendar-event display-4"></i>
@@ -122,7 +148,7 @@
                                     </div>
 
                                     {{-- Título e descrição --}}
-                                    <h3 class="h6 card-title mb-2">{{ $evento->titulo }}</h3>
+                                    <h3 class="h6 card-title mb-2">{{ $evento->nome }}</h3>
                                     <p class="text-muted small mb-1">
                                         <i class="bi bi-calendar me-1"></i>{{ $evento->data_evento->format('d/m/Y H:i') }}
                                     </p>
@@ -159,16 +185,16 @@
                                     
                                     @auth
                                         @php
-                                                // AGORA FUNCIONA! O relacionamento está definido no Model User
-                                                $userInscrito = auth()->user()->inscricoes()
-                                                    ->where('evento_id', $evento->id)
-                                                    ->where('status', 'confirmada')
-                                                    ->exists();
-                                                
-                                                $vagasDisponiveis = $evento->vagas_disponiveis ?? $evento->vagas_total;
-                                                $temVagas = $vagasDisponiveis === null || $vagasDisponiveis > 0;
-                                            @endphp
-                                        
+                                            // AGORA FUNCIONA! O relacionamento está definido no Model User
+                                            $userInscrito = auth()->user()->inscricoes()
+                                                ->where('evento_id', $evento->id)
+                                                ->where('status', 'confirmada')
+                                                ->exists();
+                                            
+                                            $vagasDisponiveis = $evento->vagas_disponiveis ?? $evento->vagas_total;
+                                            $temVagas = $vagasDisponiveis === null || $vagasDisponiveis > 0;
+                                        @endphp
+                                    
                                         @if($userInscrito)
                                             <form method="POST" action="{{ route('user.eventos.cancelar', $evento->id) }}" class="d-inline">
                                                 @csrf

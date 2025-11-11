@@ -112,4 +112,26 @@ class DoacaoController extends Controller
                 ->with('error', 'Erro ao cancelar doação: ' . $e->getMessage());
         }
     }
+
+    public function relatorio()
+{
+    try {
+        $doacoes = Doacao::with(['user', 'item.categoria'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+            
+        $estatisticas = [
+            'total_doacoes' => Doacao::count(),
+            'doacoes_aprovadas' => Doacao::where('status', 'aprovado')->count(),
+            'doacoes_pendentes' => Doacao::where('status', 'pendente')->count(),
+            'doacoes_rejeitadas' => Doacao::where('status', 'rejeitado')->count(),
+        ];
+        
+        return view('admin.doacoes.relatorio', compact('doacoes', 'estatisticas'));
+        
+    } catch (\Exception $e) {
+        return redirect()->route('admin.dashboard')
+            ->with('error', 'Erro ao carregar relatório: ' . $e->getMessage());
+    }
+}
 }
